@@ -1,0 +1,188 @@
+CL-PKTC-EUE-PROV-MGMT-MIB DEFINITIONS ::= BEGIN
+    IMPORTS
+    OBJECT-TYPE,
+    MODULE-IDENTITY
+                        FROM SNMPv2-SMI
+    OBJECT-GROUP,
+    MODULE-COMPLIANCE   FROM SNMPv2-CONF
+    SnmpAdminString
+                        FROM SNMP-FRAMEWORK-MIB
+    InetAddressType,
+    InetAddress
+                        FROM INET-ADDRESS-MIB
+    pktcEUEMibs         FROM CLAB-DEF-MIB;
+
+    pktcEUEProvMgmtMIB MODULE-IDENTITY
+        LAST-UPDATED "200711060000Z"
+        ORGANIZATION "Cable Television Laboratories, Inc."
+        CONTACT-INFO
+            "Sumanth Channabasappa
+            Postal: Cable Television Laboratories, Inc
+            858 Coal Creek Circle
+            Louisville, CO 80027
+            U.S.A.
+            Phone: +1 303 661 9100
+            Fax: +1 303 661 9199
+            E-mail:mibs@cablelabs.com
+            Acknowledgements:
+            Eugene Nechamkin, Broadcom
+            Thomas Clack, Broadcom - Primary author
+            Josh Littlefield, Cisco,
+            and members of the PacketCable PACM Focus Team. "
+        DESCRIPTION
+            "This MIB module provides the provisioning and management
+            MIB module for the E-UE Provisioning Framework."
+        ::= { pktcEUEMibs 5 }
+    
+    -- Administrative assignments
+    pktcEUEProvMgmtNotifications        OBJECT IDENTIFIER ::= { pktcEUEProvMgmtMIB 0 }
+    pktcEUEProvMgmtObjects              OBJECT IDENTIFIER ::= { pktcEUEProvMgmtMIB 1 }
+    pktcEUEProvMgmtConformance          OBJECT IDENTIFIER ::= { pktcEUEProvMgmtMIB 2 }
+    
+	pktcEUEProvMgmtVersion OBJECT-TYPE
+	    SYNTAX SnmpAdminString(SIZE(0..6))
+	    MAX-ACCESS read-only
+	    STATUS current
+	    DESCRIPTION
+		" This MIB Object represents the Provisioning and Management Module
+		version. The eUE MUST set this MIB Object to value of '1.0'."
+	    ::= { pktcEUEProvMgmtObjects 1 }
+	    
+	-- DHCP Servers for IPv6
+	pktcEUEDhcpv6ServerId1 OBJECT-TYPE
+	    SYNTAX OCTET STRING (SIZE(0..32))
+	    MAX-ACCESS read-only
+	    STATUS current
+	    DESCRIPTION
+		" This MIB Object contains the primary DHCP Server identifier
+		(DSS_ID)the E-UE was provided with, during provisioning.
+		The eUE MUST populate this MIB Object with the first
+		thirty-two bytes of the DHCPv6 Server identifier
+		provided within the eCM's CL_OPTION_CCCV6 or CL_V4OPTION_CCCV6,
+		sub-option 1."
+	    DEFVAL { ''H }
+	    ::= { pktcEUEProvMgmtObjects 2 }
+	    
+	pktcEUEDhcpv6ServerId2 OBJECT-TYPE
+	    SYNTAX OCTET STRING (SIZE(0..32))
+	    MAX-ACCESS read-only
+	    STATUS current
+	    DESCRIPTION
+		" This MIB Object contains the secondary DHCP Server identifier
+		(DSS_ID) the E-UE was provided with, during provisioning.
+		The eUE MUST populate this MIB Object with the first
+		thirty-two bytes of the DHCPv6 Server identifier
+		provided within the eCM's CL_OPTION_CCCV6 or CL_V4OPTION_CCCV6,
+		sub-option 2."
+	    DEFVAL { ''H }
+	    ::= { pktcEUEProvMgmtObjects 3 }
+	    
+	pktcEUEDhcpv6ServerAddressType OBJECT-TYPE
+	    SYNTAX InetAddressType
+	    MAX-ACCESS read-only
+	    STATUS current
+	    DESCRIPTION
+		"This MIB Object contains the DHCP Server Address type
+		contained in the MIB Object 'pktcEUEDhcpv6ServerAddress'.
+		Valid values are 'ipv6(2)' and 'unknown(0)'."
+	    ::= { pktcEUEProvMgmtObjects 4 }
+	    
+	pktcEUEDhcpv6ServerAddress OBJECT-TYPE
+	    SYNTAX InetAddress
+	    MAX-ACCESS read-only
+	    STATUS current
+	    DESCRIPTION
+		"This MIB Object contains the DHCPv6 Server address from
+		which the eUE obtained its IPv6 address, if the eUE
+		is in IPv6 mode, and can obtain the information."
+	    ::= { pktcEUEProvMgmtObjects 5 }
+	    
+	-- DNS Servers for IPv6
+	pktcEUEDnsv6ServerAddressType OBJECT-TYPE
+	    SYNTAX InetAddressType
+	    MAX-ACCESS read-only
+	    STATUS current
+	    DESCRIPTION
+		"This MIB Object contains the DNS Server Address type
+		contained in the MIB Object 'pktcEUEDnsv6ServerAddress'.
+		Valid values are 'ipv6(2)' and 'unknown(0)'."
+	    ::= { pktcEUEProvMgmtObjects 6}
+	    
+	pktcEUEDnsv6ServerAddress1 OBJECT-TYPE
+	    SYNTAX InetAddress
+	    MAX-ACCESS read-write
+	    STATUS current
+	    DESCRIPTION
+		"This MIB Object contains the primary DNSv6 Server address
+		which the eUE obtained via DHCPv6, when the eUE
+		is in IPv6 mode."
+	    ::= { pktcEUEProvMgmtObjects 7 }
+	    
+	pktcEUEDnsv6ServerAddress2 OBJECT-TYPE
+	    SYNTAX InetAddress
+	    MAX-ACCESS read-write
+	    STATUS current
+	    DESCRIPTION
+		"This MIB Object contains the secondary DNSv6 Server address
+		which the eUE obtained via DHCPv6, when the eUE
+		is in IPv6 mode."
+	    ::= { pktcEUEProvMgmtObjects 8 }
+        
+            
+    -- Object Groups
+    -- The object groups used in this MIB module are imported from
+    -- the PKTC-IETF-MTA-MIB MIB (RFC4682).
+    -- Conformance Statements
+    pktcEUEProvMgmtCompliances      OBJECT IDENTIFIER ::= { pktcEUEProvMgmtConformance 1 }
+    pktcEUEProvMgmtGroups           OBJECT IDENTIFIER ::= { pktcEUEProvMgmtConformance 2 }
+    
+    -- Compliance Statements
+    pktcEUEProvMgmtCompliance MODULE-COMPLIANCE
+        STATUS      current
+        DESCRIPTION
+            "The compliance statement for PacketCable eUE devices
+            that implement the PacketCable eUE Provisioning Framework.
+            This compliance statement specifies, for the PacketCable
+            eUE Provisioning framework, the required objects from the 'Multimedia
+            Terminal Adapter(MTA)Management Information Base for
+            PacketCable and IPCablecom-Compliant Devices'(RFC 4682)MIB.
+            Some objects from RFC4682 have been enhanced for applicability
+            to eUEs. Similarly, inapplicable objects are clearly indicated.
+            As indicated in the eUE Provisioning specification, references
+            to E-MTA and eMTA in RFC4682 are to be understood to be applicable
+            to E-UE and eUE, respectively. "
+            
+        REFERENCE
+            "PacketCable E-UE Provisioning Framework Specification"
+        MODULE --PKTC-IETF-MTA-MIB
+        MANDATORY-GROUPS {
+			pktcMtaGroup,
+			pktcMtaNotificationGroup
+			 }
+
+        MODULE
+        MANDATORY-GROUPS {
+            pktcEUEProvMgmtGroup
+        }
+    ::= { pktcEUEProvMgmtCompliances 1 }
+    
+    pktcEUEProvMgmtGroup OBJECT-GROUP
+        OBJECTS {
+                pktcEUEProvMgmtVersion,
+                pktcEUEDhcpv6ServerId1,
+                pktcEUEDhcpv6ServerId2,
+                pktcEUEDhcpv6ServerAddressType,
+                pktcEUEDhcpv6ServerAddress,
+                pktcEUEDnsv6ServerAddressType,
+                pktcEUEDnsv6ServerAddress1,
+                pktcEUEDnsv6ServerAddress2
+                }
+        STATUS current
+        DESCRIPTION
+            "The eUE Operator Group."
+        ::= { pktcEUEProvMgmtGroups 1}
+        
+    -- Notifications
+    -- pktcMtaDevProvisioningEnrollment NOTIFICATION-TYPE - Same as PKTC-IETF-MTAMIB
+    -- pktcMtaDevProvisioningStatus NOTIFICATION-TYPE - Same as PKTC-IETF-MTAMIB
+END

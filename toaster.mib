@@ -1,0 +1,156 @@
+-- $Header: /usr/cvsroot/target/src/wrn/wm/demo/unxagent/sun/toaster.mib,v 1.1.1.1 2001/11/05 17:49:17 tneale Exp $
+
+--______________________________________________________________________
+--
+--  *** Restricted Rights Legend ***
+--
+--  The programs and information contained herein are licensed only
+--  pursuant to a license agreement that contains use, reverse
+--  engineering, disclosure, and other restrictions; accordingly, it
+--  is "Unpublished - all rights reserved under the applicable
+--  copyright laws".
+--
+--  Use duplication, or disclosure by the Government is subject to
+--  restrictions as set forth in subparagraph (c)(1)(ii) of the Rights
+--  in Technical Data and Computer Licensed Programs clause of DFARS
+--  52.227 7013.
+--
+--  Copyright 2000-2001 Wind River Systems, Inc.
+--  Copyright 1994-1997 Epilogue Technology Corporation.
+--  Copyright 1998 Integrated Systems, Inc.
+--  All rights reserved.
+--
+--  *** Government Use ***
+--
+--  The Licensed Programs and their documentation were developed at
+--  private expense and no part of them is in the public domain.
+--
+--  The Licensed Programs are "Restricted Computer Software" as that
+--  term is defined in Clause 52.227-19 of the Federal Acquisition
+--  Regulations (FAR) and are "Commercial Computer Software" as that
+--  term is defined in Subpart 227.401 of the Department of Defense
+--  Federal Acquisition Regulation Supplement (DFARS).
+--
+--  (i) If the licensed Programs are supplied to the Department of
+--      Defense (DoD), the Licensed Programs are classified as
+--      "Commercial Computer Software" and the Government is acquiring
+--      only "restricted rights" in the Licensed Programs and their
+--      documentation as that term is defined in Clause 52.227
+--      7013(c)(1) of the DFARS, and
+--
+--  (ii) If the Licensed Programs are supplied to any unit or agency
+--      of the United States Government other than DoD, the
+--      Government's rights in the Licensed Programs and their
+--      documentation will be as defined in Clause 52.227-19(c)(2) of
+--      the FAR.
+--______________________________________________________________________
+
+ TOASTER-MIB
+
+	FORCE-INCLUDE <stdio.h>
+	FORCE-INCLUDE <sys/types.h>
+	FORCE-INCLUDE <envoy/h/asn1.h>
+	FORCE-INCLUDE <envoy/h/mib.h>
+	FORCE-INCLUDE <envoy/h/snmpdefs.h>
+	FORCE-INCLUDE <envoy/h/snmp.h>
+	FORCE-INCLUDE <envoy/h/auxfuncs.h>
+
+	FORCE-INCLUDE "toasthnd.h"
+	FORCE-INCLUDE "../toast_sa.h"
+
+	DEFAULT get-function-async get_%t_async
+	DEFAULT set-function-async null_set_proc
+	DEFAULT test-function-async it_exists_async
+	DEFAULT next-function-async std_next_async
+	DEFAULT cookie (char *)NULL
+
+ DEFINITIONS ::= BEGIN
+
+	IMPORTS enterprises
+		    FROM RFC1155-SMI
+		OBJECT-TYPE
+		    FROM RFC-1212;
+--		DisplayString
+--		    FROM RFC-1213;
+DisplayString ::= OCTET STRING
+
+epilogue	OBJECT IDENTIFIER ::= { enterprises 12 }
+toaster		OBJECT IDENTIFIER ::= { epilogue 2 }
+
+-- toaster MIB
+
+toasterManufacturer	OBJECT-TYPE
+	SYNTAX	DisplayString
+	ACCESS	read-only
+	STATUS	mandatory
+	DESCRIPTION
+		"The name of the toaster's manufacturer. For instance,
+		 Sunbeam."
+	DEFAULT cookie toaster_manf
+	::= { toaster 1 }
+
+toasterModelNumber	OBJECT-TYPE
+	SYNTAX	DisplayString
+	ACCESS	read-only
+	STATUS	mandatory
+	DESCRIPTION
+		"The name of the toaster's model. For instance,
+		 Radiant Automatic."
+	DEFAULT	cookie cd_ModelNumber
+	::=	{ toaster 2 }
+
+toasterControl	OBJECT-TYPE
+	SYNTAX	INTEGER {
+			up(1),
+			down(2)
+			}
+	ACCESS	read-write
+	STATUS	mandatory
+	DESCRIPTION
+		"This variable controls the current state of the toaster.
+		 To begin toasting, set it to down(2). To abort toasting
+		 (perhaps in the event of an emergency), set it to
+		 up(1)."
+	DEFAULT set-function-async toaster_set
+	DEFAULT test-function-async toaster_test
+	DEFAULT	cookie &toasterstate
+	::=	{ toaster 3 }
+
+toasterDoneness	OBJECT-TYPE
+	SYNTAX	INTEGER (1..10)
+	ACCESS	read-write
+	STATUS	mandatory
+	DESCRIPTION
+		"This variable controls how well done ensuing toast should be
+		 on a scale of 1 to 10. Toast made at 10 is generally
+		 considered unfit for human consumption; toast made at 1
+		 is lightly warmed."
+	DEFAULT set-function-async toaster_set
+	DEFAULT test-function-async toaster_test
+	DEFAULT	cookie &toasterdoneness
+	::=	{ toaster 4 }
+
+toasterToastType	OBJECT-TYPE
+	SYNTAX	INTEGER {
+			white-bread(1),
+			wheat-bread(2),
+			wonder-bread(3),
+			frozen-waffle(4),
+			frozen-bagel(5),
+			hash-brown(6),
+			other(7)
+			}
+	ACCESS	read-write
+	STATUS	mandatory
+	DESCRIPTION
+		"This variable informs the toaster of the type of material
+		 being toasted. The toaster uses this information combined
+		 with toasterToastDoneness to compute how long the
+		 material must be toasted for to achieve the desired
+		 doneness."
+	DEFAULT set-function-async toaster_set
+	DEFAULT test-function-async toaster_test
+	DEFAULT	cookie &toasttype
+	::=	{ toaster 5 }
+
+	END

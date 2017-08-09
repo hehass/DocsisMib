@@ -1,0 +1,58 @@
+-- This is a reduced version of the RFC1907 mib.  It contains only the
+-- additions to the snmp group to allow those objects to be added into
+-- an agent without including the rest of rfc1907.  This is intended
+-- to be used for test purposes.
+
+DROPS-MIB DEFINITIONS ::= BEGIN
+
+IMPORTS
+    MODULE-IDENTITY, OBJECT-TYPE,
+    Counter32, snmpModules, mib-2, enterprises
+        FROM SNMPv2-SMI;
+
+etcdropsMIB MODULE-IDENTITY
+    LAST-UPDATED "0003080000Z"
+    ORGANIZATION "Wind River Networks"
+    CONTACT-INFO
+            "support@windriver.com"
+
+    DESCRIPTION
+            "The extra objects for the snmp group from 1907"
+
+    ::= { enterprises 12 10 5 }
+
+-- the SNMP group
+--
+-- a collection of objects providing basic instrumentation and
+-- control of an SNMP entity.
+
+snmp     OBJECT IDENTIFIER ::= { mib-2 11 }
+
+snmpSilentDrops OBJECT-TYPE
+    SYNTAX     Counter32
+    MAX-ACCESS read-only
+    STATUS     current
+    DESCRIPTION
+            "The total number of GetRequest-PDUs, GetNextRequest-PDUs,
+            GetBulkRequest-PDUs, SetRequest-PDUs, and InformRequest-PDUs
+            delivered to the SNMP entity which were silently dropped
+            because the size of a reply containing an alternate
+            Response-PDU with an empty variable-bindings field was
+            greater than either a local constraint or the maximum
+            message size associated with the originator of the request."
+    ::= { snmp 31 }
+
+snmpProxyDrops OBJECT-TYPE
+    SYNTAX     Counter32
+    MAX-ACCESS read-only
+    STATUS     current
+    DESCRIPTION
+            "The total number of GetRequest-PDUs, GetNextRequest-PDUs,
+            GetBulkRequest-PDUs, SetRequest-PDUs, and InformRequest-PDUs
+            delivered to the SNMP entity which were silently dropped
+            because the transmission of the (possibly translated)
+            message to a proxy target failed in a manner (other than a
+            time-out) such that no Response-PDU could be returned."
+    ::= { snmp 32 }
+
+END

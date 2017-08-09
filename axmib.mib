@@ -1,0 +1,509 @@
+     AGENTX-MIB DEFINITIONS ::= BEGIN
+
+     IMPORTS
+        MODULE-IDENTITY, OBJECT-TYPE, experimental, Counter32, Unsigned32
+           FROM SNMPv2-SMI
+        MODULE-COMPLIANCE, OBJECT-GROUP
+           FROM SNMPv2-CONF
+        DisplayString, TimeStamp, TEXTUAL-CONVENTION
+           FROM SNMPv2-TC;
+
+
+     agentxMIB MODULE-IDENTITY
+        LAST-UPDATED "9705141200Z" -- May 14, 1997
+        ORGANIZATION "IETF AgentX Working Group"
+        CONTACT-INFO
+           "Smitha Gudur
+            sgudur@bmc.com
+
+            Send comments to the AgentX working group: agentx@fv.com."
+        DESCRIPTION
+           "The MIB module for the SNMP Agent Extensibility Protocol
+            (AgentX). This MIB module will be implemented by the master
+            agent."
+     -- For testing purposes only. Need to get an experimental id
+        ::= { experimental 2001 }
+     --   ::= { experimental XX }
+
+     agentxObjects OBJECT IDENTIFIER ::= { agentxMIB 1 }
+     agentxGeneral OBJECT IDENTIFIER ::= { agentxObjects 1 }
+
+     --
+     -- Textual Conventions
+     --
+     Utf8String ::= TEXTUAL-CONVENTION
+        DISPLAY-HINT "255a"
+        STATUS  current
+        DESCRIPTION
+           "To facilitate internationalization, this TC represents
+           information taken from the ISO/IEC IS 10646-1 character set,
+           encoded as an octet string using the UTF-8 character encoding
+           scheme described in RFC 2044 [8].  For strings in 7-bit US-ASCII,
+           there is no impact since the UTF-8 representation is identical
+           to the US-ASCII encoding."
+        SYNTAX  OCTET STRING (SIZE (0..255))
+
+     agentxDefaultTimeout OBJECT-TYPE
+        SYNTAX      INTEGER (0..255)
+        UNITS       "seconds"
+        MAX-ACCESS  read-write
+        STATUS      current
+        DESCRIPTION
+           "The default length of time, in seconds, that the master agent
+           should allow to elapse after dispatching a message to a subagent
+           before it regards the subagent as not responding. This is a
+           system-wide value that may be overridden by the values
+           associated with a particular subagent (agentxSATimeout) or a
+           particular registered MIB region (agentxRegTimeout)."
+        DEFVAL      { 5 }
+        ::= { agentxGeneral 1 }
+
+     agentxMasterAgentXVer OBJECT-TYPE
+        SYNTAX      INTEGER (1..256)
+        MAX-ACCESS  read-only
+        STATUS      current
+        DESCRIPTION
+           "The AgentX protocol version supported by this master
+           agent. Current version is 1. Note that the master agent must
+           allow registration of earlier version subagents."
+        DEFVAL      { 1 }
+        ::= { agentxGeneral 2 }
+
+     agentxMasterTransports OBJECT-TYPE
+     -- For testing with a pre-v2c compiler
+     --   SYNTAX      BIT STRING {
+        SYNTAX      BITS {
+                       unixDomainSockets(0),
+                       tcp(1),
+                       udp(2),
+                       sharedMem(3),
+                       other(4)
+                    }
+        MAX-ACCESS  read-only
+        STATUS      current
+        DESCRIPTION
+           "The transports that the master agent supports."
+        DEFVAL      { { unixDomainSockets } }
+        ::= { agentxGeneral 4 }
+
+     --
+     -- The AgentX Subagent Group
+     --
+
+     agentxSubagent OBJECT IDENTIFIER ::= { agentxObjects 2 }
+
+     agentxSATableLastChange OBJECT-TYPE
+        SYNTAX      TimeStamp
+        MAX-ACCESS  read-only
+        STATUS      current
+        DESCRIPTION
+           "The value of sysUpTime when the last row creation or deletion
+           occurred in the agentxSubagentTable."
+        ::= { agentxSubagent 1 }
+
+     agentxSANumber OBJECT-TYPE
+        SYNTAX      Unsigned32
+        MAX-ACCESS  read-only
+        STATUS      current
+        DESCRIPTION
+           "The current number of entries in the agentxSubagentTable. Note
+           that this may be smaller than the largest value of agentxSAIndex
+           since index values are not reused when entries come and go from
+           the agentxSubagentTable."
+        ::= { agentxSubagent 2 }
+
+     --
+     -- The AgentX Subagent Table
+     --
+
+     agentxSubagentTable OBJECT-TYPE
+        SYNTAX      SEQUENCE OF AgentxSubagentEntry
+        MAX-ACCESS  not-accessible
+        STATUS      current
+        DESCRIPTION
+           "A table of AgentX subagents that have open sessions with the
+           AgentX master agent."
+        ::= { agentxSubagent 3 }
+
+     agentxSubagentEntry OBJECT-TYPE
+        SYNTAX      AgentxSubagentEntry
+        MAX-ACCESS  not-accessible
+        STATUS      current
+        DESCRIPTION
+           "Information about a single open session between the AgentX
+           master agent and a subagent."
+        INDEX       { agentxSAIndex }
+        ::= { agentxSubagentTable 1 }
+
+     AgentxSubagentEntry ::= SEQUENCE {
+        agentxSAIndex         Unsigned32,
+        agentxSAObjectID      OBJECT IDENTIFIER,
+        agentxSADescr         Utf8String,
+        agentxSAAdminStatus   INTEGER,
+        agentxSAOpenTime      TimeStamp,
+        agentxSAAgentXVer     INTEGER,
+        agentxSATimeout       INTEGER,
+        agentxSATransportType INTEGER,
+        agentxSATransportAddr OCTET STRING
+     }
+
+     agentxSAIndex OBJECT-TYPE
+        SYNTAX      Unsigned32
+        MAX-ACCESS  not-accessible
+        STATUS      current
+        DESCRIPTION
+           "A unique, small-integer index for the subagent's session. Note
+           that if a subagent's session with the master agent is closed for
+           any reason its index will not be re-used, therefore, the values
+           of agentxSAIndex may not be contiguous and will not be the same
+           for the same subagent across multiple sessions."
+        ::= { agentxSubagentEntry 1 }
+
+     agentxSAObjectID OBJECT-TYPE
+        SYNTAX      OBJECT IDENTIFIER
+        MAX-ACCESS  read-only
+        STATUS      current
+        DESCRIPTION
+           "This is analogous to sysObjectID defined in MIB-2 [2] and is taken
+           from the o.id field of the agentx-Open-PDU."
+        ::= { agentxSubagentEntry 2 }
+
+     agentxSADescr OBJECT-TYPE
+        SYNTAX      Utf8String
+        MAX-ACCESS  read-only
+        STATUS      current
+        DESCRIPTION
+           "A textual description of the subagent. This is analogous to
+           sysDescr defined in MIB-2 [2] and is taken from the o.descr
+           field of the agentx-Open-PDU."
+        ::= { agentxSubagentEntry 3 }
+
+     agentxSAAdminStatus OBJECT-TYPE
+        SYNTAX      INTEGER {
+                       up(1),
+                       down(2)
+                    }
+        MAX-ACCESS  read-write
+        STATUS      current
+        DESCRIPTION
+           "The administrative (desired) status of the subagent. Setting
+           the value to 'down(2)' closes the subagent (with c.reason set to
+           'reasonByManager'). When read, the value returned is always
+           'up(1)'."
+        DEFVAL      { up }
+        ::= { agentxSubagentEntry 4 }
+
+     agentxSAOpenTime OBJECT-TYPE
+        SYNTAX      TimeStamp
+        MAX-ACCESS  read-only
+        STATUS      current
+        DESCRIPTION
+           "The value of sysUpTime when this session was opened and,
+           therefore, this entry was added to the table."
+        ::= { agentxSubagentEntry 5 }
+
+     agentxSAAgentXVer OBJECT-TYPE
+        SYNTAX      INTEGER (1..256)
+        MAX-ACCESS  read-only
+        STATUS      current
+        DESCRIPTION
+           "The version of the AgentX protocol supported by the
+           subagent. This will be equal to or less than the value of
+           agentxMasterAgentXVer."
+        DEFVAL      { 1 }
+        ::= { agentxSubagentEntry 6 }
+
+     agentxSATimeout OBJECT-TYPE
+        SYNTAX     INTEGER (0..255)
+        MAX-ACCESS read-write
+        STATUS     current
+        DESCRIPTION
+           "The length of time, in seconds, that a master agent should
+           allow to elapse after dispatching a message to this subagent
+           before it regards the subagent as not responding. This value is
+           taken from the o.timeout field of the agentx-Open-PDU.
+
+           This is a subagent-wide value that may be overridden by values
+           associated with specific registered MIB regions (see
+           agentxRegTimeout).  The default value of '0' indicates that the
+           master agent's default timeout value should be used (see
+           agentxDefaultTimeout).
+
+           Note that, if the agent supports writing of this object the new
+           value will be used for the next agentx-Open-PDU the subagent
+           sends."
+        DEFVAL     { 0 }
+        ::= { agentxSubagentEntry 7 }
+
+     agentxSATransportType OBJECT-TYPE
+        SYNTAX      INTEGER {
+                       unixDomainSockets(1),
+                       tcp(2),
+                       udp(3),
+                       sharedMem(4),
+                       other(5)
+                    }
+        MAX-ACCESS  read-only
+        STATUS      current
+        DESCRIPTION
+           "The transport used for AgentX protocol messages between this
+           subagent and the master agent."
+        ::= { agentxSubagentEntry 8 }
+
+     agentxSATransportAddr OBJECT-TYPE
+        SYNTAX      OCTET STRING
+        MAX-ACCESS  read-only
+        STATUS      current
+        DESCRIPTION
+           "The 'address' of the session this subagent has open with the
+           master agent. Interpretation of this value depends on the value
+           of agentxSATransportType."
+        ::= { agentxSubagentEntry 9 }
+
+
+     --
+     -- The AgentX Registration Table
+     --
+
+     agentxRegistrationTable OBJECT-TYPE
+        SYNTAX      SEQUENCE OF AgentxRegistrationEntry
+        MAX-ACCESS  not-accessible
+        STATUS      current
+        DESCRIPTION
+           "A table of registered OBJECT IDENTIFIER regions. This is the
+           table used to dispatch AgentX PDUs to the appropriate subagent
+           based on the requested OIDs in the SNMP messages. Note that a
+           subagent registration may be broken up into multiple entries in
+           this table, as described in the AgentX Protocol specification,
+           [5]."
+        ::= { agentxObjects 3 }
+
+     agentxRegistrationEntry OBJECT-TYPE
+        SYNTAX      AgentxRegistrationEntry
+        MAX-ACCESS  not-accessible
+        STATUS      current
+        DESCRIPTION
+           "A single registered region. Regions are added by the master
+           agent when subagents register and are removed from the table
+           when the subagents unregister the region or their sessions are
+           closed. Note that the combination of agentxRegContext,
+           agentxRegStart and agentxRegDispatchOrder will be unique and
+           could have been used for indexing purposes."
+        INDEX       { agentxRegIndex }
+        ::= { agentxRegistrationTable 1 }
+
+     AgentxRegistrationEntry ::= SEQUENCE {
+        agentxRegIndex           Unsigned32,
+        agentxRegContext         OCTET STRING,
+        agentxRegStart           OBJECT IDENTIFIER,
+        agentxRegEnd             OBJECT IDENTIFIER,
+        agentxRegPriority        Unsigned32,
+        agentxRegSAIndex         Unsigned32,
+        agentxRegTimeout         INTEGER
+     }
+
+     agentxRegIndex OBJECT-TYPE
+        SYNTAX      Unsigned32
+        MAX-ACCESS  not-accessible
+        STATUS      current
+        DESCRIPTION
+           "An integer that uniquely identifies a registration entry."
+        ::= { agentxRegistrationEntry 1 }
+
+     agentxRegContext OBJECT-TYPE
+        SYNTAX      OCTET STRING
+        MAX-ACCESS  read-only
+        STATUS      current
+        DESCRIPTION
+           "The context in which the subagent supports the objects in this
+           region. A zero-length context indicates the default context."
+        ::= { agentxRegistrationEntry 2 }
+
+     agentxRegStart OBJECT-TYPE
+        SYNTAX      OBJECT IDENTIFIER
+        MAX-ACCESS  read-only
+        STATUS      current
+        DESCRIPTION
+           "The starting OBJECT IDENTIFIER of this registration entry. The
+           subagent identified by agentxRegSAIndex implements objects
+           starting at this value (inclusive). Note that this value could
+           identify an object type, an object instance, or a partial object
+           instance identifier."
+        ::= { agentxRegistrationEntry 3 }
+
+     agentxRegEnd OBJECT-TYPE
+        SYNTAX      OBJECT IDENTIFIER
+        MAX-ACCESS  read-only
+        STATUS      current
+        DESCRIPTION
+           "The ending OBJECT IDENTIFIER of this registration entry. The
+           subagent identified by agentxRegSAIndex implements objects up to but
+           not including this value. Note that this value could identify an
+           object type, an object instance, or a partial object instance
+           identifier."
+        ::= { agentxRegistrationEntry 4 }
+
+     --
+     --
+     --
+     --agentxRegDispatchOrder OBJECT-TYPE
+     --   SYNTAX      INTEGER (0..256)
+     --   MAX-ACCESS  read-only
+     --   STATUS      current
+     --   DESCRIPTION
+     --      "An indication of this range's order or precedence for
+     --      dispatching purposes. This value will normally be 0 indicating
+     --      that there is no duplicate OID registration for this range. If
+     --      the value is anything but 0 then there is duplicate registration
+     --      and the entry with the lowest value of agentxRegDispatchOrder
+     --      will be the one selected."
+     --   REFERENCE
+     --      "Agent Extensibility (AgentX) Protocol Version 1, [5], section
+     --      7.1.4.1 Handling Duplicate OID Ranges."
+     --   DEFVAL     { 0 }
+     --   ::= { agentxRegistrationEntry 5 }
+
+
+     --
+     --      To support other subagents types that can be visible to the manager.
+     --
+     agentxRegPriority OBJECT-TYPE
+        SYNTAX      Unsigned32
+        MAX-ACCESS  read-write
+        STATUS      current
+        DESCRIPTION
+           "The subagent's priority when exporting this OID range. Lower
+           values have higher priority.
+
+           Note that, if the agent supports writing of this object the new
+           value will be used for subsequent agentx-Register-PDUs the
+           subagent sends for this region. In other words, if the manager
+           wishes to change the value operationally, she must set this
+           value then set the corresponding agentxSAAdminStatus to
+           'down(2)' (as indicated by agentxRegSAIndex), which will close
+           the subagent, after which is will automatically re-open the
+           session and re-register its OID ranges with the new priority."
+        DEFVAL      { 255 }
+        ::= { agentxRegistrationEntry 5 }
+
+     agentxRegSAIndex OBJECT-TYPE
+        SYNTAX      Unsigned32
+        MAX-ACCESS  read-only
+        STATUS      current
+        DESCRIPTION
+           "The value of agentxSAIndex for the subagent that registered
+           this OID range."
+        ::= { agentxRegistrationEntry 6 }
+
+     agentxRegTimeout OBJECT-TYPE
+        SYNTAX      INTEGER (0..255)
+        MAX-ACCESS  read-write
+        STATUS      current
+        DESCRIPTION
+           "The timeout value, in seconds, for subagent responses to
+           requests associated with this OID range. The value '0' indicates
+           that default value (indicated by agentxSATimeout or
+           agentxDefaultTimeout) is to be used. This value is taken from
+           the r.timeout field of the agentx-Register-PDU.
+
+           Note that, if the agent supports writing of this object the new
+           value will be used for subsequent agentx-Register-PDUs the
+           subagent sends for this region."
+        DEFVAL      { 0 }
+        ::= { agentxRegistrationEntry 7 }
+
+
+     --
+     -- The AgentX Statistics Group
+     --
+     -- The statistics in this group are maintained by the Master Agent.
+     --
+     --      Other stats have been removed. Support trap generation based
+     --      on certain situations for  duplicate registration.
+     --
+     agentxStats OBJECT IDENTIFIER ::= { agentxObjects 4 }
+
+     agentxRegisterDuplicate OBJECT-TYPE
+        SYNTAX      Counter32
+        MAX-ACCESS  read-only
+        STATUS      current
+        DESCRIPTION
+           "The number of agentx-Response-PDU messages sent by the master
+           agent in response to incoming agentx-Register-PDU messages where
+           the res.error field was set to 'duplicateRegistration'."
+        ::= { agentxStats 1 }
+
+     --
+     -- Conformance Statements for the AgentX MIB
+     --
+
+     agentxConformance     OBJECT IDENTIFIER ::= { agentxMIB 2 }
+     agentxMIBGroups       OBJECT IDENTIFIER ::= { agentxConformance 1 }
+     agentxMIBCompliances  OBJECT IDENTIFIER ::= { agentxConformance 2 }
+
+     agentxMIBCompliance MODULE-COMPLIANCE
+        STATUS      current
+        DESCRIPTION
+           "The compliance statement for SNMP entities that implement the
+           AgentX protocol. Note that a compliant agent can implement all
+           objects in this MIB module as read-only."
+
+        MODULE -- this module
+           MANDATORY-GROUPS  { agentxMIBGroup }
+
+           OBJECT agentxDefaultTimeout
+              MIN-ACCESS read-only
+              DESCRIPTION
+                 "Write access is not required."
+
+           OBJECT agentxSATimeout
+              MIN-ACCESS read-only
+              DESCRIPTION
+                 "Write access is not required."
+
+           OBJECT agentxSAAdminStatus
+              MIN-ACCESS read-only
+              DESCRIPTION
+                 "Write access is not required."
+
+           OBJECT agentxRegPriority
+              MIN-ACCESS read-only
+              DESCRIPTION
+                 "Write access is not required."
+
+           OBJECT agentxRegTimeout
+              MIN-ACCESS read-only
+              DESCRIPTION
+                 "Write access is not required."
+
+        ::= { agentxMIBCompliances 1 }
+
+     agentxMIBGroup OBJECT-GROUP
+        OBJECTS {
+           agentxDefaultTimeout,
+           agentxMasterAgentXVer,
+           agentxMasterTransports,
+           agentxSATableLastChange,
+           agentxSANumber,
+           agentxSATimeout,
+           agentxSAObjectID,
+           agentxSADescr,
+           agentxSAAdminStatus,
+           agentxSAOpenTime,
+           agentxSAAgentXVer,
+           agentxSATransportType,
+           agentxSATransportAddr,
+           agentxRegContext,
+           agentxRegStart,
+           agentxRegEnd,
+           agentxRegPriority,
+           agentxRegSAIndex,
+           agentxRegTimeout,
+           agentxRegisterDuplicate
+        }
+        STATUS      current
+        DESCRIPTION
+           "All accessible objects in the AgentX MIB."
+        ::= { agentxMIBGroups 1 }
+
+     END

@@ -1,0 +1,1898 @@
+ARRIS-SIP-MIB DEFINITIONS ::= BEGIN
+
+IMPORTS
+ MODULE-IDENTITY, OBJECT-TYPE, Unsigned32, Integer32, IpAddress
+  FROM SNMPv2-SMI
+ arris
+  FROM ARRIS-MIB
+ OBJECT-GROUP 
+  FROM SNMPv2-CONF
+ TruthValue, DisplayString, TEXTUAL-CONVENTION
+  FROM SNMPv2-TC
+ InetAddress, InetAddressType  
+  FROM INET-ADDRESS-MIB;
+
+arrisSipMib MODULE-IDENTITY
+    LAST-UPDATED    "201008270000Z" -- Aug 27, 2010
+    ORGANIZATION    "Arris Interactive"
+    CONTACT-INFO
+  "Donnie Tew
+   Postal: Arris Interactive
+    3871 Lakefield Drive
+    Suite 300
+    Suwanee, GA 30024-1242
+    U.S.A.
+   Phone:  +1 770 622 8500
+   E-mail: donnie.tew@arrisi.com"
+    DESCRIPTION
+      "This is the portion of the Arris enterprise MIB that applies
+       to SIP signaling."
+-- Revision history
+    ::= { arris 11 }
+
+sipConfiguration OBJECT IDENTIFIER ::= { arrisSipMib 1 }
+sipStatus OBJECT IDENTIFIER ::= { arrisSipMib 2 }
+
+
+--=====================================================================
+-- SIP per port configuration data
+--=====================================================================
+sipCfgPortTable OBJECT-TYPE
+ SYNTAX SEQUENCE OF SipCfgPortEntry
+ MAX-ACCESS not-accessible
+ STATUS current
+ DESCRIPTION
+  "This table is used to define the SIP configurable data on a per port basis."
+ ::= { sipConfiguration 1 }
+
+sipCfgPortEntry OBJECT-TYPE
+ SYNTAX SipCfgPortEntry
+ MAX-ACCESS not-accessible
+ STATUS current
+ DESCRIPTION
+  "An entry in the Configuration Port table."
+ INDEX { sipCfgPortPortNumber }
+ ::= { sipCfgPortTable 1 }
+
+SipCfgPortEntry ::= SEQUENCE{
+  sipCfgPortPortNumber Integer32,
+  sipCfgPortUserName OCTET STRING,
+  sipCfgPortDisplayName DisplayString,
+  sipCfgPortLogin OCTET STRING,
+  sipCfgPortPassword OCTET STRING,
+  sipCfgPortWarmOrHotlineNumber DisplayString,
+  sipCfgPortWarmLineTimeout INTEGER,
+  sipCfgPortRegistrarAdr DisplayString,
+  sipCfgPortRegistrarPort Integer32,
+  sipCfgPortRegistrarType INTEGER,
+  sipCfgPortProxyAdr DisplayString,
+  sipCfgPortProxyPort Integer32,
+  sipCfgPortProxyType INTEGER,
+  sipCfgPortFeatureSettings BITS,
+  sipCfgPortT38Mode INTEGER,
+  sipCfgPortMaxT38HSRedLevel Integer32,
+  sipCfgPortFaxOnlyTimeout Integer32,
+  sipCfgPortCallByeDelay Unsigned32,
+  sipCfgPortMWIClear TruthValue, 
+  sipCfgPortMWIVisualEnable TruthValue,
+  sipCfgPortMWIToneEnable TruthValue,
+  sipCfgPortLoopReversal TruthValue,
+  sipCfgPortCurrentProxy DisplayString
+ }
+
+sipCfgPortPortNumber OBJECT-TYPE
+ SYNTAX Integer32
+ MAX-ACCESS not-accessible
+ STATUS current
+ DESCRIPTION 
+  "The unique value which identifies the port."
+ ::= { sipCfgPortEntry 1 }
+
+sipCfgPortUserName OBJECT-TYPE
+ SYNTAX OCTET STRING(SIZE(0..1023))
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION
+  "String used for the user portion of the SIP URI for this port.  It is
+   suggested that this string be the phone number of the line so that it
+   can be used for Caller ID.  This object is only settable during 
+   config file download.  This item is the only mandatory item in this
+   table for the line to be able to provide service."
+ ::= { sipCfgPortEntry 2 }
+ 
+sipCfgPortDisplayName OBJECT-TYPE
+ SYNTAX DisplayString
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION
+  "String used for the Display Name of the SIP URI. It is recommended that
+   this be the name of the subscriber so that it can be used for Caller
+   Name Delivery.  This object is only settable during config file download."
+ ::= { sipCfgPortEntry 3 } 
+
+sipCfgPortLogin OBJECT-TYPE
+ SYNTAX OCTET STRING(SIZE(0..1023))
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION 
+  "String used for the login name of the SIP agent for this line. This 
+   object is only settable during config file download.  Since this
+   setting is used as part of the authentication process when read
+   will only show as XXXXXXX"
+ ::= { sipCfgPortEntry 4 }
+ 
+sipCfgPortPassword OBJECT-TYPE
+ SYNTAX OCTET STRING(SIZE(0..8192))
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION
+  "String used for the password of the SIP agent for this line. This 
+   object is only settable during config file download.  Since this
+   setting is used as part of the authentication process when read
+   will only show as XXXXXXX"
+ ::= { sipCfgPortEntry 5 }
+ 
+sipCfgPortWarmOrHotlineNumber OBJECT-TYPE
+ SYNTAX DisplayString
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION
+  "To enable the warm or hotline feature on the line, this object must be set
+   to the phone number that will be called for the feature.  For the warmline
+   feature this number should be set as well as the timeout object
+   sipCfgPortWarmLineTimeout for the timer before we send out the INVITE to
+   the line.  For the hotline feature, this MIB should be set and the
+   sipCfgPortWarmLineTimeout object should be set to 0 (its default value).
+   This object is only settable during configuration file download."
+ ::= { sipCfgPortEntry 6 }
+ 
+sipCfgPortWarmLineTimeout OBJECT-TYPE
+ SYNTAX INTEGER
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION
+  "This setting is used as the timer (in seconds) for the period of time 
+   after an offhook before an INVITE for the warmline number is sent.
+   This object is only settable during configuration file download."
+ ::= { sipCfgPortEntry 7 }
+ 
+sipCfgPortRegistrarAdr OBJECT-TYPE
+ SYNTAX DisplayString
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION
+  "This is the address of the SIP registrar server for this line.  This object is only 
+   settable during config file download. It this object is used it will take precedence 
+   over any setting to the sipCfgRegistrarAdr MIB object for this line."
+ ::= { sipCfgPortEntry 8 }   
+
+sipCfgPortRegistrarPort OBJECT-TYPE
+ SYNTAX Integer32
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION
+  "This is the port of the SIP registrar server for this line.  This object is only 
+   settable during config file download. It this object is used it will take precedence 
+   over any setting to the sipCfgRegistrarAdr MIB object for this line."
+ ::= { sipCfgPortEntry 9 }
+
+sipCfgPortRegistrarType OBJECT-TYPE
+ SYNTAX INTEGER{
+                ipv4(0),
+                dns(1)}
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION
+  "This is the type for the address of the SIP registrar server for this line. This object 
+   is only settable during config file download. It this object is used it will take 
+   precedence over any setting to the sipCfgRegistrarAdr MIB object for this line."
+ ::= { sipCfgPortEntry 10 }
+ 
+sipCfgPortProxyAdr OBJECT-TYPE
+ SYNTAX DisplayString
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION
+  "This is the address of the SIP proxy server for this line.  This can be the same server
+   as the registrar server. This object is only settable during config file download. It this
+   object is used it will take precedence over any setting to the sipCfgProxyAdr MIB object
+   for this line."
+ ::= { sipCfgPortEntry 11 }   
+
+sipCfgPortProxyPort OBJECT-TYPE
+ SYNTAX Integer32
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION
+  "This is the port of the SIP proxy server for this line.  This object is only settable
+   during config file download. It this object is used it will take precedence over any 
+   setting to the sipCfgProxyAdr MIB object for this line."
+ ::= { sipCfgPortEntry 12 }
+ 
+sipCfgPortProxyType OBJECT-TYPE
+ SYNTAX INTEGER{
+                ipv4(0),
+                dns(1)}
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION
+  "This is the type for the address of the SIP proxy server for this line. This object 
+   is only settable during config file download. It this object is used it will take 
+   precedence over any setting to the sipCfgProxyAdr MIB object for this line."
+ ::= { sipCfgPortEntry 13 }
+ 
+sipCfgPortFeatureSettings OBJECT-TYPE 
+    SYNTAX BITS { 
+        defaultFeatures(0), 
+        callerIdPermanentDisable(1), 
+        anonCallRejectionEnable(2), 
+        callWaitingPermanentDisable(3),
+        threeWayCallingDisable(4),
+        callerIdReceiptDisable(5),
+        callTransferEnable(6)
+    }  
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION
+  "This object allows for MSO control of certain feature states via the config file.
+   If the settings for these features do not need to be set a certain way at
+   powerup, then this MIB should not be used.  This MIB is not settable via SNMP.
+   
+   When read this object will show the current state of the features on the line.
+
+   /** BIT Descriptions **/
+   0x40 - Setting of the callerIdPermanentDisable(1) bit means that the default
+   outbound caller ID method is caller ID restrictive. Default is for caller ID
+   info to be presented to the callee.
+
+   0x20 - Setting of the anonCallRejectionEnable(2) bit means that the anonymous
+   call rejection feature will be enabled until disabled via star code by the user
+   or by removal of the setting via SNMP update.
+
+   0x10 - Setting of the callWaitingPermanentDisable(3) bit means that call waiting
+   will be deactivated for this line.
+   
+   0x08 - Setting of the threeWayCallingDisable(4) bit will disable the hook flash
+   processing while the user is in an active call.  This will disable the user from
+   placing a three way call.
+   
+   0x04 - Setting of the callerIdReceiptDisable(5) bit will disable local caller ID
+   display.
+   
+   0x02 - Setting of the callTransferEnable(6) bit will enable the call transfer 
+   feature."
+ ::= { sipCfgPortEntry 14 }
+ 
+sipCfgPortT38Mode OBJECT-TYPE
+ SYNTAX INTEGER{
+                t38Off(1),
+                t38Loose(2),
+                t38Strict(3)}
+
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION
+  "This object is used to enable T38 mode for the line.  By default T38 is disabled. To
+   enable it this value must be set to t38Loose or t38Strict.  In t38Loose mode T38
+   negotiation will be attempted without prior knowledge of the other ends support
+   for T38.  In t38Strict mode, the endpoint will not attempt a T38 transition
+   unless the other end has advertised capabilites for T38 support."
+ DEFVAL { t38Off }   
+ ::= { sipCfgPortEntry 15 }
+
+sipCfgPortFaxOnlyTimeout OBJECT-TYPE
+ SYNTAX Integer32 (0..600)
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION
+  "This object is used to define a line as a fax only line.  The default value of the
+   object is zero which means no timeout.  When the object is set to a non-zero value
+   a timer is started after receiving the far ends SDP.  If this timer pops without
+   having received fax/modem tones on the connection the call will be dropped.  Its
+   units are in seconds."
+ DEFVAL { 0 }
+ ::= { sipCfgPortEntry 16 } 
+    
+sipCfgPortMaxT38HSRedLevel OBJECT-TYPE
+ SYNTAX Integer32(0..2)
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION
+  "This MIB is used to set the maximum high-speed redundancy level that will be used for 
+   T.38 fax-relay in both the send and receive direction.  High speed redundancy refers 
+   to the number of additional older data packets included in each T.38 datagram when 
+   transferring fax data between endpoints.  For example, if an endpoint is transmitting 
+   T.38 with a high-speed redundancy level of two and the current sequence number of the 
+   data packet is 15, two older (i.e. previously transmitted) data packets with sequence 
+   numbers 13 and 14 are included in the T.38 datagram.  In general, this makes T.38 
+   data transmission much less susceptible to packet loss in the network.  This parameter 
+   is configuration to restrict the amount of bandwidth used for T.38 transmission.
+
+   Setting the maximum high-speed redundancy level does not necessarily mean that the 
+   endpoint will always transmit and receive at that level.  The endpoint will attempt to 
+   transmit at that level only if allowed by the remote endpoint.  During call setup the 
+   remote endpoint may provide the T38FaxMaxDatagram attribute within its SDP indicating 
+   the maximum datagram size that it is able to receive.  If this number is smaller than 
+   is needed to transmit at the maximum level, the redundancy will be reduced accordingly.
+
+   Likewise, the local endpoint will construct its T38FaxMaxDatagram attribute according 
+   to the maximum high-speed redundancy level configured to restrict the far end from 
+   sending T.38 datagram packets with a higher level of high-speed redundancy.  This does 
+   not necessarily mean that the remote endpoint will transmit at the maximum high-speed 
+   redundancy configured, but does guarantee that it will not transmit at a higher level.  
+   The remote endpoint may be configured to transmit at a lower high-speed redundancy level, 
+   or may choose to reduce the transmission speed to reduce the bandwidth consumption."
+ DEFVAL { 1 }   
+ ::= { sipCfgPortEntry 17 } 
+    
+sipCfgPortCallByeDelay OBJECT-TYPE
+ SYNTAX Unsigned32 
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION
+  "This MIB Object specifies the Bye Delay in seconds per line."  
+ DEFVAL { 0 }   
+ ::= { sipCfgPortEntry 18 } 
+
+sipCfgPortMWIClear OBJECT-TYPE
+ SYNTAX TruthValue 
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION
+  "Set this MIB Object can clear the current MWI, and the Get operation of this MIB Object
+   will always return FALSE."  
+ DEFVAL { false }   
+ ::= { sipCfgPortEntry 19 } 
+
+sipCfgPortMWIVisualEnable OBJECT-TYPE
+ SYNTAX TruthValue 
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION
+  "This MIB Object enables or disables the visual indication for the MWI NOTIFY."
+ DEFVAL { true }   
+ ::= { sipCfgPortEntry 20 } 
+
+sipCfgPortMWIToneEnable OBJECT-TYPE
+ SYNTAX TruthValue 
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION
+  "This MIB Object enables or disables the stutter tone indication for the MWI NOTIFY."
+ DEFVAL { true }   
+ ::= { sipCfgPortEntry 21 } 
+
+sipCfgPortLoopReversal OBJECT-TYPE
+ SYNTAX TruthValue 
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION
+  "This MIB Object enables or disables the loop polarity/reversal.When enabled(1),it indicates 
+  that if the line is calling party, it will reverse the polarity when the far end answers, then 
+  set back to normal when the call is completed. If the line is called party, it will reverse the 
+  polarity when ringing or talking and remain reversed if called party hangs up first."
+ DEFVAL { false }   
+ ::= { sipCfgPortEntry 24 } 
+
+ sipCfgPortCurrentProxy OBJECT-TYPE
+ SYNTAX DisplayString 
+ MAX-ACCESS read-only
+ STATUS current
+ DESCRIPTION
+  "This is the address of the SIP proxy currently used by the line."
+ ::= { sipCfgPortEntry 25 }
+ 
+sipCfgDigitMap OBJECT-TYPE
+ SYNTAX OCTET STRING (SIZE (0..2048))
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION
+  "This table is used to define digit map for the device.  The format of
+   the string is the same as a digit map used in MGCP.  It is only 
+   settable in the config file. This object is only settable during config 
+   file download."
+ ::= { sipConfiguration 2 }
+
+sipCfgProxyAdr OBJECT-TYPE
+ SYNTAX DisplayString
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION
+  "This is the address of the SIP proxy server.  This can be the same server
+   as the registrar server. This    object is only settable during config file 
+   download."
+ ::= { sipConfiguration 3 }
+
+sipCfgProxyType OBJECT-TYPE
+ SYNTAX INTEGER{
+                ipv4(0),
+                dns(1)}
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION
+  "This is the type of the SIP proxy server. This object is only settable during 
+   config file download."
+ ::= { sipConfiguration 4 }
+
+sipCfgRegistrarAdr OBJECT-TYPE
+ SYNTAX DisplayString
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION
+  "This is the address of the SIP registrar server, this can be the same
+   server as the proxy server. This object is only settable during config 
+   file download."
+ ::= { sipConfiguration 5 }
+
+sipCfgRegistrarType OBJECT-TYPE
+ SYNTAX INTEGER{
+                ipv4(0),
+                dns(1)}
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION
+  "This is the type of the SIP registrar server. This object is only settable 
+   during config file download."
+ ::= { sipConfiguration 6 }
+
+sipCfgSipFeatureSwitch OBJECT-TYPE
+  SYNTAX BITS { 
+      telUriScheme(0),
+      mtaFQDN(1),
+      mwiRFC3842(2),
+      advFlashFeatures(3),
+      rfc3323Privacyheader(4),
+      overrideDomain(5),
+      disableCwCid(6),
+      useIpAddressOf0ForHold(7),
+      disable100REL(8),
+      useSrvLookups(9),
+      rtpKeepAlive(10),
+      ignoreEarlyMedia(11),
+      hookflashViaInfo(12),
+      limitSdpUpdates(13),
+      generateRemoteRT(14),
+      playLocalRtAfterEarlyMedia(15),
+      removeAuthHeaders(16),
+      useInactiveMedia(17),
+      noProvisionalSdpIn1XX(18),
+      unused19(19),
+      proxyPenaltyBox(20),
+      playBusyToneOnReject(21),
+      sessionTimerReInvite(22),
+      emergencyOnhookSendBye(23),
+      disableSessionTimers(24),
+      stutterToneHookFlash(25),
+      hookflashViaInfoStd(26),
+      subscribeUAProfileXML(27),
+      subscribeRegEventXML(28),
+      preferTelUriForCid(29),
+      callHoldWithoutReInvite(30),
+      restrictIncomingOffer(31)
+  }
+  MAX-ACCESS read-write
+  STATUS current
+  DESCRIPTION
+    "This object is used to enable features of the Arris SIP MTA. From left to 
+     right, the specified bit indicates whether or not the corresponding feature 
+     is enabled.  For example, if the first bit is set, then the telUriScheme 
+     feature is enabled. If it is zero, the feature is disabled.  NO bits are 
+     set by default.
+     
+     /** BIT Descriptions **/
+     0x80000000 : telUriScheme       - Use tel Uri Scheme 'tel:' (currently unsupported).
+     0x40000000 : mtaFQDN            - Use MTA's local FQDN instead of local IP.
+     0x20000000 : mwiRFC3842         - Use RFC3842 for MWI (message waiting indicator).
+     0x10000000 : advFlashFeatures   - Enable Advanced Flash Features.
+     0x08000000 : rfc3323Privacyheader - Use RFC 3323 defined privacy header for caller id blocking.
+     0x04000000 : overrideDomain     - Override the domain value in outgoing messages with the proxy setting.
+     0x02000000 : disableCwCid       - Disable the use of caller-id during call waiting.
+     0x01000000 : useIpAddressOf0ForHold - Use an IP address of 0.0.0.0 and port of 0 in SDP instead of a=sendonly for hold.
+     0x00800000 : disable100REL      - This is set if we DO NOT want to advertise that we support 100rel (must be set in MTA config file).
+     0x00400000 : useSrvLookups      - This bit is set if we want to use SRV lookups for the server addresses (must be set in the MTA config file).
+     0x00200000 : rtpKeepAlive       - With this bit set the endpoint will send silent packets over a held connection
+     0x00100000 : ignoreEarlyMedia   - This bit is set if we want to ignore all media received before the remote SDP is obtained.
+     0x00080000 : hookflashViaInfo   - With this bit set the endpoint will signal hookflash via an info message instead of locally processing it -- BoradSoft method
+     0x00040000 : limitSdpUpdates    - With this bit set, we will scan over new SDPs we generate to only increment the origin line if critical info has changed.
+     0x00020000 : generateRemoteRT   - This bit is set if we want to generate ringback tone over the connection.
+     0x00010000 : playLocalRtAfterEarlyMedia - This bit is set to play local RT upon receipt of a 180 after early media is detected.
+     0x00008000 : removeAuthHeaders  - This bit is set to remove the unneeded auth headers from a callLeg after a 401 or 407 response is received.
+     0x00004000 : useInactiveMedia   - This bit is set to allow the MTA to hold calls using the INACTIVE media attribute.  
+     0x00002000 : noProvisionalSdpIn1XX - This bit is set to turn off sending early media (SDP in provisional 1XX response) on incoming INVITEs with 100Rel enabled
+     0x00001000 : Reserved for Future.
+     0x00000800 : proxyPenaltyBox    - Use penalty box for unresponsive proxies
+     0x00000400 : playBusyToneOnReject  - This bit is set to always play busy tone when an outbound call is rejected
+     0x00000200 : sessionTimerReInvite  - Use Re-INVITE instead of UPDATE for session timer refresh 
+     0x00000100 : emergencyOnhookSendBye  -  With this bit set, BYE message will be sent after an emergency call goes on-hook 
+     0x00000080 : disableSessionTimers - Do not use SIP Session Timers (RFC 4028).This setting will only take effect after an MTA reset or full reset because it requires that the SIP stack be restarted.
+     0x00000040 : stutterToneHookFlash - With this bit set, stutter dial tone will be played when hook is flashed for a second call.
+     0x00000020 : hookflashViaInfoStd  - With this bit set the endpoint will signal hookflash via an info message instead of locally processing it -- Standard method 
+     0x00000010 : subscribeUAProfileXML   - subscribe to UA Profile event package, application XML, including Call Forward count
+     0x00000008 : subscribeRegEventXML   - Subscribe to reg event package, application XML
+     0x00000004 : preferTelUriForCid      - Use TEL-URI as precedence over SIP-URI  for Caller ID display
+     0x00000002 : callHoldWithoutReInvite.   - With this bit set,the call hold will be processed locally instead of sending out reinvite
+     0x00000001 : restrictIncomingOffer   - Use the provisioned SIP Codec Array to restrict an incoming offer"
+  DEFVAL { '00000000'h }
+ ::= { sipConfiguration 7 }
+
+sipCfgProvisionedCodecArray OBJECT-TYPE
+ SYNTAX DisplayString
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION
+  "This is the list of codecs offered in the OFFER SDP. The order 
+   of this list is also the order of preference used in the OFFER SDP.
+   These are entered as a string separated by semi-colon ';' for example
+   'PCMU;PCMA;G726-32;telephone-event'
+
+   The supported codecs are PCMU, PCMA, G728, G729, G729E, G726-16,
+   G726-24, G726-32, G726-40, telephone-event.
+   
+   The default string will be 'PCMU;PCMA'. This object is only settable 
+   during config file download."
+ ::= { sipConfiguration 8 }
+
+sipCfgPacketizationRate OBJECT-TYPE
+ SYNTAX INTEGER{
+                tenMilliSeconds(10),
+                twentyMilliSeconds(20),
+                thirtyMilliSeconds(30)}
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION
+  "RTP Packetization Rate. This object is only settable during config file 
+   download."
+ DEFVAL { twentyMilliSeconds }
+ ::= { sipConfiguration 9 }
+
+sipCfgDialFeatMap OBJECT-TYPE
+ SYNTAX OCTET STRING (SIZE (0..2048))
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION
+  "This defines the dialed digits on a handset to the actual dialing feature.  
+   It allows for 3 aliases per feature separated by commas followed by the dialing 
+   feature name. A pipe is used to designate the end of the assignment. An example 
+   would be:
+
+   *70,1170, ,CALWD|*67,1167, ,CIDTB|*77,1177, ,ANNCJ|*87,1187, ,ANCJD|*65,1165, ,CIDPB|
+   *82,1182, ,CIDTE|
+
+   CALWD = Call Waiting Disable
+   CIDTB = Caller ID Temp Block
+   CIDPB = Caller ID Perm Block
+   CIDTB = Caller ID Temp Block
+   ANNCJ = Anonymous Call Rejection
+   ANCJD = Anonymous Call Rejection Disable
+   
+   This example two of the settings are dialing *70 or 1170 will disable call waiting and 
+   *67 or 1167 will temporarily block caller ID for that one call. This object is only 
+   settable during config file download."
+ ::= { sipConfiguration 10 }
+
+sipCfgDialFeatTable OBJECT-TYPE
+ SYNTAX SEQUENCE OF SipCfgDialFeatEntry
+ MAX-ACCESS not-accessible
+ STATUS current
+ DESCRIPTION
+  "This table is used to define the SIP configurable data on a per port basis."
+ ::= { sipConfiguration 11 }
+
+sipCfgDialFeatEntry OBJECT-TYPE
+ SYNTAX SipCfgDialFeatEntry
+ MAX-ACCESS not-accessible
+ STATUS current
+ DESCRIPTION
+  "An entry in the Configuration Feature table."
+ INDEX { sipCfgDialFeatNumber }
+ ::= { sipCfgDialFeatTable 1 }
+
+SipCfgDialFeatEntry ::= SEQUENCE{
+  sipCfgDialFeatNumber  Integer32,
+  sipCfgDialFeatName    INTEGER,
+  sipCfgDialFeatCode    DisplayString,
+  sipCfgDialFeatTone    INTEGER,
+  sipCfgDialFeatActive  BITS,
+  sipCfgDialFeatMode    BITS
+ }
+
+sipCfgDialFeatNumber OBJECT-TYPE
+ SYNTAX Integer32
+ MAX-ACCESS not-accessible
+ STATUS current
+ DESCRIPTION 
+  "The unique value which identifies the feature."
+ ::= { sipCfgDialFeatEntry 1 }
+
+
+sipCfgDialFeatName OBJECT-TYPE
+ SYNTAX INTEGER{
+                anonCallReject(1),
+                anonCallRejectDisable(2),
+                callForwardBusy(30),
+                callForwardBusyDisable(31),
+                callForwardUncond(32),
+                callForwardUncondDisable(33),
+                callForwardNoAnswer(34),
+                callForwardNoAnswerDisable(35),
+                warmline(36),
+                warmlineDisable(37),
+                callReturn(50),
+                callReDial(60),
+                callHold(61),
+                repeatDialingEnable(62),
+                repeatDialingCancel(63),
+                callWaitTempDisable(70),
+                callWaitPermDisableToggle(71),
+                callWaitPermanentDisable(72),
+                callWaitPermanentEnable(73),
+                callerIDPermBlockToggle(90),
+                callerIDTempEnable(91),
+                callerIDTempBlock(92)}
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION
+  "Table of supported calling features."
+ ::= { sipCfgDialFeatEntry 2 }
+
+sipCfgDialFeatCode OBJECT-TYPE
+ SYNTAX DisplayString
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION
+  "String comma separated to specify up to three codes for a particular feature.
+   Example:
+   
+   *70,1170,*71
+
+   This would specify that either *70, 1170 or *71 would activate the current
+   feature.  A maximum of three values are supported."
+ ::= { sipCfgDialFeatEntry 3 }
+
+sipCfgDialFeatTone OBJECT-TYPE
+ SYNTAX INTEGER{
+                stutterTone(1),
+                dialTone(2)}    
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION 
+  "This allows specification of a tone to be applied when a feature is entered.
+   Typically stutter tone is used to acknowledge a feature was entered but this can
+   be redefined here."
+ ::= { sipCfgDialFeatEntry 4 }
+
+
+sipCfgDialFeatActive OBJECT-TYPE
+  SYNTAX BITS { 
+      line32(0),
+      line31(1),
+      line30(2),
+      line29(3),
+      line28(4),
+      line27(5),
+      line26(6),
+      line25(7),
+      line24(8),
+      line23(9),
+      line22(10),
+      line21(11),
+      line20(12),
+      line19(13),
+      line18(14),
+      line17(15),
+      line16(16),
+      line15(17),
+      line14(18),
+      line13(19),
+      line12(20),
+      line11(21),
+      line10(22),
+      line09(23),
+      line08(24),
+      line07(25),
+      line06(26),
+      line05(27),
+      line04(28),
+      line03(29),
+      line02(30),
+      line01(31)
+  }
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION 
+  "This allows a particular feature to be enabled or disabled based on a particular line number.
+  
+   Example a setting of 0x0003 would have this feature enabled for line 1 and line 2."
+ ::= { sipCfgDialFeatEntry 5 }
+
+sipCfgDialFeatMode OBJECT-TYPE
+    SYNTAX BITS {
+    unused0(0),
+    unused1(1),
+    unused2(2),
+    unused3(3),
+    unused4(4),
+    unused5(5),
+    busy(6),
+    initialDialing(7)
+}
+MAX-ACCESS read-write
+STATUS current
+DESCRIPTION
+  "This allows a particular feature to be enabled in different modes of dialing.  The default is
+   a setting of 0x1 where the feature is active in a initial dialing (normal)"
+  ::= { sipCfgDialFeatEntry 6 }
+
+
+sipCfgDialProxyMap OBJECT-TYPE
+ SYNTAX OCTET STRING (SIZE (0..2048))
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION
+  "This defines the dialed digits on a handset to the actual dialing feature that is to
+   be handled by a SIP Proxy.  
+     
+   It allows a dial code, a specified tone and the line bitmap.
+   A pipe is used to designate the end of the assignment. An example 
+   would be:
+
+   code, tone, active |
+   
+   *50,1,3|*93,2,0|
+
+   code   = the dial sequence for the fature on the SIP Proxy
+   tone   = the specific tone to be played when dialed
+   active = is a UINT32 bitmask with each bit representing which line has this feature
+   
+   tone: 1 = studder dialtone, 2 = dialtone
+
+   This example has two features.  The first is when *50 is dialed tone number 1 will be
+   played and the feature is actived on line 1 and line 2 (000 0011).
+   
+   The second feature is *93 that when dialed would issue a dialtone.  However there are
+   no active bits set so no lines on this box will offer this feature so it is currently
+   disabled.
+   
+   NOTE: This MIB is loaded by TLV43/TLV71."
+ ::= { sipConfiguration 12 }
+
+sipCfgAlertInfoR0 OBJECT-TYPE
+ SYNTAX DisplayString (SIZE (0..50))
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION
+  "This is the string that will be used as the value of the Alert-Info header field
+   to instruct the MTA to play either the R0 Ringing Cadence.  Note that there is
+   not a WT0 waiting tone that corresponds to this header."
+ ::= { sipConfiguration 13 }
+
+sipCfgAlertInfoR1 OBJECT-TYPE
+ SYNTAX DisplayString (SIZE (0..50))
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION
+  "This is the string that will be used as the value of the Alert-Info header field
+   to instruct the MTA to play either the R1 Ringing Cadence or the WT1 call waiting
+   tone depending on if a call is active."
+ ::= { sipConfiguration 14 }
+ 
+sipCfgAlertInfoR2 OBJECT-TYPE
+ SYNTAX DisplayString (SIZE (0..50))
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION
+  "This is the string that will be used as the value of the Alert-Info header field
+   to instruct the MTA to play either the R2 Ringing Cadence or the WT2 call waiting
+   tone depending on if a call is active."
+ ::= { sipConfiguration 15 }
+ 
+sipCfgAlertInfoR3 OBJECT-TYPE
+ SYNTAX DisplayString (SIZE (0..50))
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION
+  "This is the string that will be used as the value of the Alert-Info header field
+   to instruct the MTA to play either the R3 Ringing Cadence or the WT3 call waiting
+   tone depending on if a call is active."
+ ::= { sipConfiguration 16 }
+ 
+sipCfgAlertInfoR4 OBJECT-TYPE
+ SYNTAX DisplayString (SIZE (0..50))
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION
+  "This is the string that will be used as the value of the Alert-Info header field
+   to instruct the MTA to play either the R4 Ringing Cadence or the WT4 call waiting
+   tone depending on if a call is active."
+ ::= { sipConfiguration 17 }
+ 
+sipCfgAlertInfoR5 OBJECT-TYPE
+ SYNTAX DisplayString (SIZE (0..50))
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION
+  "This is the string that will be used as the value of the Alert-Info header field
+   to instruct the MTA to play either the R5 Ringing Cadence.  Note that there is
+   not a WT5 waiting tone that corresponds to this header."
+ ::= { sipConfiguration 18 }
+
+sipCfgAlertInfoR6 OBJECT-TYPE
+ SYNTAX DisplayString (SIZE (0..50))
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION
+  "This is the string that will be used as the value of the Alert-Info header field
+   to instruct the MTA to play either the R6 Ringing Cadence.  Note that there is
+   not a WT6 waiting tone that corresponds to this header."
+ ::= { sipConfiguration 19 }
+
+sipCfgAlertInfoR7 OBJECT-TYPE
+ SYNTAX DisplayString (SIZE (0..50))
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION
+  "This is the string that will be used as the value of the Alert-Info header field
+   to instruct the MTA to play either the R7 Ringing Cadence.  Note that there is
+   not a WT7 waiting tone that corresponds to this header."
+ ::= { sipConfiguration 20 }
+                         
+sipCfgDomainOverride OBJECT-TYPE
+ SYNTAX DisplayString
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION
+  "This is the string that will be used as the value of the domain in all outbound
+   SIP signalling messages.  This can only be set in the configuration file"
+ ::= { sipConfiguration 21 }
+ 
+ sipCfgEmergencyNumber OBJECT-TYPE
+ SYNTAX DisplayString (SIZE (0..50))
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION
+  "This is the string that will specify the emergency number.  A call to an emergency # cannot
+   be pre-empted.  If a three way call is attempted with an emergency # the other call is terminated.
+   Flash, OnHook have no effect during an emergency call."
+ ::= { sipConfiguration 22 }
+ 
+  sipCfgRegTimerMin OBJECT-TYPE
+ SYNTAX Integer32
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION
+  "This integer specifies the minimum registration retry interval (in seconds)"
+ ::= { sipConfiguration 23 }
+ 
+   sipCfgRegTimerMax OBJECT-TYPE
+ SYNTAX Integer32
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION
+  "This integer specifies the maximum registration retry interval (in seconds)"
+ ::= { sipConfiguration 24 }
+
+sipStatusPortTable OBJECT-TYPE
+ SYNTAX SEQUENCE OF SipStatusPortEntry
+ MAX-ACCESS not-accessible
+ STATUS current
+ DESCRIPTION
+  "This table is used to get SIP status data on a per port basis."
+ ::= { sipStatus 1 }
+
+sipStatusPortEntry OBJECT-TYPE
+ SYNTAX SipStatusPortEntry
+ MAX-ACCESS not-accessible
+ STATUS current
+ DESCRIPTION
+  "An entry in the Status Port table."
+ INDEX { sipStatusPortPortNumber }
+ ::= { sipStatusPortTable 1 }
+
+SipStatusPortEntry ::= SEQUENCE{
+  sipStatusPortPortNumber Integer32,
+  sipStatusAlarms BITS
+}
+
+sipStatusPortPortNumber OBJECT-TYPE
+ SYNTAX Integer32
+ MAX-ACCESS not-accessible
+ STATUS current
+ DESCRIPTION 
+  "The unique value which identifies the port."
+ ::= { sipStatusPortEntry 1 }
+ 
+ sipStatusAlarms OBJECT-TYPE
+  SYNTAX BITS
+  {
+      unused(0),
+      generalErrorAlrm(1),
+      networkErrorAlrm(2),
+      callLegSentAuth(3),
+      regClientSentAuthReq(4),
+      authFailAlrm(5),
+      registrarLocAlrm(6),
+      proxyLocAlrm(7)
+}
+MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+          "This MIB object reports the current SIP alarm state for each line. 
+           
+           generalErrorAlrm - set when an error occurs that doesn't have an
+           RFC supported error condition
+           
+           networkErrorAlrm - set when a network error occurs such as DNS failure
+           or ICMP destination unreachable
+           
+           callLegSentAuth - set when the callLeg has sent authorization information
+           due to a authorization required response
+           
+           regClientSentAuthReq - set when the registration client has sent 
+           authorization information due to a authorization required response
+           
+           authFailAlrm - set when authentication failed during registration or callLeg
+           authorization after authorization information was sent
+           
+           registrarLocAlrm - set by the register client when REGISTER messages timeout
+           (Loss of communications)
+           
+           proxyLocAlrm - set when CallLeg messages timeout (Loss of communications)"
+ ::= {sipStatusPortEntry 2}
+
+sipCfgT1 OBJECT-TYPE
+ SYNTAX Integer32
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION
+  "This integer specifies the minimum wait time between retransmission for SIP outgoing calls(T1 in RFC 3261)."
+ ::= { sipConfiguration 25 }
+ 
+sipCfgMaxRetrans OBJECT-TYPE
+ SYNTAX Integer32
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION
+  "DEPRECATED - Please use sipCfgTimerB.  This integer specifies the number of transmit attempts that will be made on an outgoing INVITE message"
+ ::= { sipConfiguration 26 }
+
+sipCfgMediaLoopbackNumber OBJECT-TYPE
+ SYNTAX DisplayString (SIZE (0..50))
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION
+  "This string specifies the number for media loopback.  If an incoming call comes from this number the MTA
+   will treat the call as if it is a loopback call.  The phone will not ring and the call will be auto-
+   answered."
+ ::= { sipConfiguration 27 }
+ 
+sipCfgPacketLoopbackNumber OBJECT-TYPE
+ SYNTAX DisplayString (SIZE (0..50))
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION
+  "This string specifies the number for packet loopback.  If an incoming call comes from this number the MTA
+   will treat the call as if it is a loopback call.  The phone will not ring and the call will be auto-
+   answered."
+ ::= { sipConfiguration 28 }
+
+sipCfgBusyDigitMap OBJECT-TYPE
+ SYNTAX OCTET STRING (SIZE (0..2048))
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION
+  "This table is used to define digit map for the device while busy tone is being played.  The format of
+   the string is the same as a digit map used in MGCP.  It is only 
+   settable in the config file."
+ ::= { sipConfiguration 29 }
+
+sipCfgRepeatDialingInterval OBJECT-TYPE
+ SYNTAX Integer32
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION
+  "This integer specifies the time between repeat dialing attempts for the repeat dialing feature.  This
+   integer is represented as seconds. It is only settable in the config file."
+ ::= { sipConfiguration 30 }
+
+sipCfgRepeatDialingTimeout OBJECT-TYPE
+ SYNTAX Integer32
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION
+  "This integer specifies the length of time that the repeat dialing feature will retry.  After this timer
+   elapses no more retry attempts will be made.  The timer is started when the feature code for repeat dialing
+   is entered. It is only settable in the config file."
+ ::= { sipConfiguration 31 }
+
+sipCfgRepeatDialingSessionProgressTimer OBJECT-TYPE
+ SYNTAX Integer32
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION
+  "This integer specifies the length of time after a 183 is received before considering the repeat dialing attempt
+   successful.  Often a 183 will be received prior to a negative response.  This timer prevents false positives
+   It is only settable in the config file."
+ ::= { sipConfiguration 32 }
+
+sipCfgFeatureCapability OBJECT IDENTIFIER ::= {sipConfiguration 33}
+
+sipCfgCallerIdDisplayCapability OBJECT-TYPE
+ SYNTAX BITS { 
+      line32(0),
+      line31(1),
+      line30(2),
+      line29(3),
+      line28(4),
+      line27(5),
+      line26(6),
+      line25(7),
+      line24(8),
+      line23(9),
+      line22(10),
+      line21(11),
+      line20(12),
+      line19(13),
+      line18(14),
+      line17(15),
+      line16(16),
+      line15(17),
+      line14(18),
+      line13(19),
+      line12(20),
+      line11(21),
+      line10(22),
+      line09(23),
+      line08(24),
+      line07(25),
+      line06(26),
+      line05(27),
+      line04(28),
+      line03(29),
+      line02(30),
+      line01(31)
+ }
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION
+ "MSO-defined capability of each line to display caller ID"
+ ::= {sipCfgFeatureCapability 1}
+
+
+sipCfgCallerIdSendCapability OBJECT-TYPE
+ SYNTAX BITS { 
+      line32(0),
+      line31(1),
+      line30(2),
+      line29(3),
+      line28(4),
+      line27(5),
+      line26(6),
+      line25(7),
+      line24(8),
+      line23(9),
+      line22(10),
+      line21(11),
+      line20(12),
+      line19(13),
+      line18(14),
+      line17(15),
+      line16(16),
+      line15(17),
+      line14(18),
+      line13(19),
+      line12(20),
+      line11(21),
+      line10(22),
+      line09(23),
+      line08(24),
+      line07(25),
+      line06(26),
+      line05(27),
+      line04(28),
+      line03(29),
+      line02(30),
+      line01(31)
+ }
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION
+ "MSO-defined capability of each line to send caller ID"
+ ::= {sipCfgFeatureCapability 2}
+
+
+sipCfgAnonCallRejectionCapability OBJECT-TYPE
+ SYNTAX BITS { 
+      line32(0),
+      line31(1),
+      line30(2),
+      line29(3),
+      line28(4),
+      line27(5),
+      line26(6),
+      line25(7),
+      line24(8),
+      line23(9),
+      line22(10),
+      line21(11),
+      line20(12),
+      line19(13),
+      line18(14),
+      line17(15),
+      line16(16),
+      line15(17),
+      line14(18),
+      line13(19),
+      line12(20),
+      line11(21),
+      line10(22),
+      line09(23),
+      line08(24),
+      line07(25),
+      line06(26),
+      line05(27),
+      line04(28),
+      line03(29),
+      line02(30),
+      line01(31)
+ }
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION
+ "MSO-defined capability of each line to reject anonymous calls"
+ ::= {sipCfgFeatureCapability 3}
+
+
+sipCfgCallWaitingCapability OBJECT-TYPE
+ SYNTAX BITS { 
+      line32(0),
+      line31(1),
+      line30(2),
+      line29(3),
+      line28(4),
+      line27(5),
+      line26(6),
+      line25(7),
+      line24(8),
+      line23(9),
+      line22(10),
+      line21(11),
+      line20(12),
+      line19(13),
+      line18(14),
+      line17(15),
+      line16(16),
+      line15(17),
+      line14(18),
+      line13(19),
+      line12(20),
+      line11(21),
+      line10(22),
+      line09(23),
+      line08(24),
+      line07(25),
+      line06(26),
+      line05(27),
+      line04(28),
+      line03(29),
+      line02(30),
+      line01(31)
+ }
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION
+ "MSO-defined capability of each line to have call waiting"
+ ::= {sipCfgFeatureCapability 4}
+
+
+sipCfgThreeWayCallCapability OBJECT-TYPE
+ SYNTAX BITS { 
+      line32(0),
+      line31(1),
+      line30(2),
+      line29(3),
+      line28(4),
+      line27(5),
+      line26(6),
+      line25(7),
+      line24(8),
+      line23(9),
+      line22(10),
+      line21(11),
+      line20(12),
+      line19(13),
+      line18(14),
+      line17(15),
+      line16(16),
+      line15(17),
+      line14(18),
+      line13(19),
+      line12(20),
+      line11(21),
+      line10(22),
+      line09(23),
+      line08(24),
+      line07(25),
+      line06(26),
+      line05(27),
+      line04(28),
+      line03(29),
+      line02(30),
+      line01(31)
+ }
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION
+ "MSO-defined capability of each line to do three way calling"
+ ::= {sipCfgFeatureCapability 5}
+
+
+sipCfgCallTransferCapability OBJECT-TYPE
+ SYNTAX BITS { 
+      line32(0),
+      line31(1),
+      line30(2),
+      line29(3),
+      line28(4),
+      line27(5),
+      line26(6),
+      line25(7),
+      line24(8),
+      line23(9),
+      line22(10),
+      line21(11),
+      line20(12),
+      line19(13),
+      line18(14),
+      line17(15),
+      line16(16),
+      line15(17),
+      line14(18),
+      line13(19),
+      line12(20),
+      line11(21),
+      line10(22),
+      line09(23),
+      line08(24),
+      line07(25),
+      line06(26),
+      line05(27),
+      line04(28),
+      line03(29),
+      line02(30),
+      line01(31)
+ }
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION
+ "MSO-defined capability of each line to transfer calls"
+ ::= {sipCfgFeatureCapability 6}
+
+
+sipCfgCallForwardCapability OBJECT-TYPE
+ SYNTAX BITS { 
+      line32(0),
+      line31(1),
+      line30(2),
+      line29(3),
+      line28(4),
+      line27(5),
+      line26(6),
+      line25(7),
+      line24(8),
+      line23(9),
+      line22(10),
+      line21(11),
+      line20(12),
+      line19(13),
+      line18(14),
+      line17(15),
+      line16(16),
+      line15(17),
+      line14(18),
+      line13(19),
+      line12(20),
+      line11(21),
+      line10(22),
+      line09(23),
+      line08(24),
+      line07(25),
+      line06(26),
+      line05(27),
+      line04(28),
+      line03(29),
+      line02(30),
+      line01(31)
+ }
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION
+ "MSO-defined capability of each line to forward calls"
+ ::= {sipCfgFeatureCapability 7}
+
+
+sipCfgCallReturnCapability OBJECT-TYPE
+ SYNTAX BITS { 
+      line32(0),
+      line31(1),
+      line30(2),
+      line29(3),
+      line28(4),
+      line27(5),
+      line26(6),
+      line25(7),
+      line24(8),
+      line23(9),
+      line22(10),
+      line21(11),
+      line20(12),
+      line19(13),
+      line18(14),
+      line17(15),
+      line16(16),
+      line15(17),
+      line14(18),
+      line13(19),
+      line12(20),
+      line11(21),
+      line10(22),
+      line09(23),
+      line08(24),
+      line07(25),
+      line06(26),
+      line05(27),
+      line04(28),
+      line03(29),
+      line02(30),
+      line01(31)
+ }
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION
+ "MSO-defined capability of each line to return calls"
+ ::= {sipCfgFeatureCapability 8}
+
+
+sipCfgCallRedialCapability OBJECT-TYPE
+ SYNTAX BITS { 
+      line32(0),
+      line31(1),
+      line30(2),
+      line29(3),
+      line28(4),
+      line27(5),
+      line26(6),
+      line25(7),
+      line24(8),
+      line23(9),
+      line22(10),
+      line21(11),
+      line20(12),
+      line19(13),
+      line18(14),
+      line17(15),
+      line16(16),
+      line15(17),
+      line14(18),
+      line13(19),
+      line12(20),
+      line11(21),
+      line10(22),
+      line09(23),
+      line08(24),
+      line07(25),
+      line06(26),
+      line05(27),
+      line04(28),
+      line03(29),
+      line02(30),
+      line01(31)
+ }
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION
+ "MSO-defined capability of each line to redial last number (as a dial feature)"
+ ::= {sipCfgFeatureCapability 9}
+
+
+sipCfgCallHoldCapability OBJECT-TYPE
+ SYNTAX BITS { 
+      line32(0),
+      line31(1),
+      line30(2),
+      line29(3),
+      line28(4),
+      line27(5),
+      line26(6),
+      line25(7),
+      line24(8),
+      line23(9),
+      line22(10),
+      line21(11),
+      line20(12),
+      line19(13),
+      line18(14),
+      line17(15),
+      line16(16),
+      line15(17),
+      line14(18),
+      line13(19),
+      line12(20),
+      line11(21),
+      line10(22),
+      line09(23),
+      line08(24),
+      line07(25),
+      line06(26),
+      line05(27),
+      line04(28),
+      line03(29),
+      line02(30),
+      line01(31)
+ }
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION
+ "MSO-defined capability of each line to hold calls"
+ ::= {sipCfgFeatureCapability 10}
+
+sipCfgProxyDigitMap OBJECT-TYPE
+ SYNTAX OCTET STRING (SIZE (0..2048))
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION
+  "This table is used to define the digit map for the device after dialing 
+  a star code that matches the proxy map.  The format of the string is the 
+  same as a digit map used in MGCP.  It is only settable in the config 
+  file. Its default value is 'x.[t#]' "
+ ::= { sipConfiguration 34 }
+
+ sipCfgCallWaitingStarCodeSurvivesReset OBJECT-TYPE
+ SYNTAX INTEGER{ false(1),
+                 true(2) }
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION
+  "An NVM setting has been added that stores the state of Call Waiting Permanent Disabled so that the state
+   survives a reset.  This MIB enables the storage of the Call Waiting state in NVM.  Some customers will want
+   to leave this MIB at a default value of 0 because of the following scenario:
+   1.   MSO issues a modem to end user A
+   2.   A dials star code to disable call waiting
+   3.   MSO reclaims modem
+   4.   MSO issues the modem to end user B
+   5.   B does not know why call waiting does not work.
+   
+   Values:
+      1 - Call Waiting Permanent Disable state is NOT stored in NVM, and Call Waiting returns to MSO defined default settings
+          when a reset occurs. If neither sipCfgCallWaitingCapability nor sipCfgPortFeatureSettings is defined in the MTA 
+          configuration file, then Call Waiting will be enabled at reset.
+      2 - If the end user dials a dial code to disable call waiting, that setting will survive resets and will last until one
+          of the following events occurs: end user dials a dial code to enable call waiting,  or sipCfgResetCallWaitingStarCode MIB is 
+          used via SNMP.
+          
+   This MIB can only be set via the MTA configuration file." 
+ ::= { sipConfiguration 35 }
+
+ sipCfgResetCallWaitingStarCode OBJECT-TYPE
+ SYNTAX BITS { 
+      line32(0),
+      line31(1),
+      line30(2),
+      line29(3),
+      line28(4),
+      line27(5),
+      line26(6),
+      line25(7),
+      line24(8),
+      line23(9),
+      line22(10),
+      line21(11),
+      line20(12),
+      line19(13),
+      line18(14),
+      line17(15),
+      line16(16),
+      line15(17),
+      line14(18),
+      line13(19),
+      line12(20),
+      line11(21),
+      line10(22),
+      line09(23),
+      line08(24),
+      line07(25),
+      line06(26),
+      line05(27),
+      line04(28),
+      line03(29),
+      line02(30),
+      line01(31)
+ }
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION
+  "This MIB is intended for use by the MSO to enable call waiting via SNMP if they have sipCfgCallWaitingDisableSurvivesReset
+   set to 1 and the following happens:
+   1.   MSO issues a modem to end user A
+   2.   A dials star code to disable call waiting
+   3.   MSO reclaims modem
+   4.   MSO issues the modem to end user B
+   5.   B does not know why call waiting does not work.
+   
+   This MIB can be used to clear the NVM setting for call waiting disable since a reset will not clear it if the MTA
+   configuration file specifies a sipCfgCallWaitingDisableSurvivesReset of 1.
+   
+   Usage:
+      Hexadecimal bit string where each bit represents a different phone line (starting with line 1 on the least significant 
+      bit).  The bit string specifies for which lines to reset the NVM Call Waiting setting to its default value of enabled.
+      If a bit is set to 1, that line's NVM Call Waiting setting is returned to default.  If a bit is set to 0, nothing is
+      done to that line.
+      
+   EXAMPLE:
+      To return call waiting to factory default setting for all lines, set sipCfgResetCallWaitingStarCode to FFFFFFFF.
+      To reset the setting for line  1 only, set sipCfgResetCallWaitingStarCode to 00000001.
+      To reset the setting for line 12 only, set sipCfgResetCallWaitingStarCode to 00000800.
+      
+      When reclaiming a modem from one end user and issuing it to another, if sipCfgCallWaitingDisableStarCodeSurvivesReset
+      was set to true in the config file, then it is advisable to set sipCfgResetCallWaitingStarCode to FFFFFFFF via SNMP
+      before giving the modem to the new user."    
+ ::= { sipConfiguration 36 }
+
+sipCfgDialProxyTable OBJECT-TYPE
+ SYNTAX SEQUENCE OF SipCfgDialProxyEntry
+ MAX-ACCESS not-accessible
+ STATUS current
+ DESCRIPTION
+  "This table replaces an older MIB, sipCfgDialProxyMap, and defines the dial features
+   that are handled by the proxy."
+ ::= { sipConfiguration 37 }
+
+sipCfgDialProxyEntry OBJECT-TYPE
+ SYNTAX SipCfgDialProxyEntry
+ MAX-ACCESS not-accessible
+ STATUS current
+ DESCRIPTION
+  "An entry in the Configuration Feature table."
+ INDEX { sipCfgDialProxyNumber }
+ ::= { sipCfgDialProxyTable 1 }
+
+SipCfgDialProxyEntry ::= SEQUENCE{
+  sipCfgDialProxyNumber  Integer32,
+  sipCfgDialProxyCode    DisplayString,
+  sipCfgDialProxyTone    INTEGER,
+  sipCfgDialProxyActive  BITS,
+  sipCfgDialProxyMessageType    INTEGER,
+  sipCfgDialProxyMethod INTEGER,
+  sipCfgDialProxyMethodDelimiter  DisplayString
+ }
+
+sipCfgDialProxyNumber OBJECT-TYPE
+ SYNTAX Integer32
+ MAX-ACCESS not-accessible
+ STATUS current
+ DESCRIPTION 
+  "The unique value which identifies the feature."
+ ::= { sipCfgDialProxyEntry 1 }
+
+
+sipCfgDialProxyCode OBJECT-TYPE
+ SYNTAX DisplayString
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION
+  "The dial code that activates this feature.  For example, *70"
+ ::= { sipCfgDialProxyEntry 2 }
+
+sipCfgDialProxyTone OBJECT-TYPE
+ SYNTAX INTEGER{
+                stutterTone(1),
+                dialTone(2)}    
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION 
+  "This allows specification of a tone to be applied when a feature is entered.
+   Typically stutter tone is used to acknowledge a feature was entered but this can
+   be redefined here."
+ ::= { sipCfgDialProxyEntry 3 }
+
+
+sipCfgDialProxyActive OBJECT-TYPE
+  SYNTAX BITS { 
+      line32(0),
+      line31(1),
+      line30(2),
+      line29(3),
+      line28(4),
+      line27(5),
+      line26(6),
+      line25(7),
+      line24(8),
+      line23(9),
+      line22(10),
+      line21(11),
+      line20(12),
+      line19(13),
+      line18(14),
+      line17(15),
+      line16(16),
+      line15(17),
+      line14(18),
+      line13(19),
+      line12(20),
+      line11(21),
+      line10(22),
+      line09(23),
+      line08(24),
+      line07(25),
+      line06(26),
+      line05(27),
+      line04(28),
+      line03(29),
+      line02(30),
+      line01(31)
+  }
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION 
+  "This allows a particular feature to be enabled or disabled based on a particular line number.
+  
+   Example a setting of 0x0003 would have this feature enabled for line 1 and line 2."
+ ::= { sipCfgDialProxyEntry 4 }
+
+sipCfgDialProxyMessageType OBJECT-TYPE
+ SYNTAX INTEGER{
+                invite(1),
+                refer(2)} 
+MAX-ACCESS read-write
+STATUS current
+DESCRIPTION
+  "For most proxy dial features, an INVITE message is sent to the proxy.  
+   In special cases, a REFER message should be sent."
+  ::= { sipCfgDialProxyEntry 5 }
+
+sipCfgDialProxyMethod OBJECT-TYPE
+    SYNTAX INTEGER{
+         default(0),
+         pc20(1)
+    }
+    MAX-ACCESS read-write
+    STATUS current
+    DESCRIPTION
+    "Used to configure the method that the VSC is passed up to the proxy.
+     In the 'default' method the VSC is prepended to the dialstring and sent to
+     the proxy.  In the 'PC20' method the VSC is sent as the host of the SIP URI
+     the dialstring is then sent to the proxy in a user parameter in the SIP URI."
+ ::= { sipCfgDialProxyEntry 6 }
+
+sipCfgDialProxyMethodDelimiter OBJECT-TYPE
+ SYNTAX DisplayString
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION
+  "Used to define the delimiter between the VSC and the number in the SIP INVITE message.
+   If this mib is not set, a '.' will be used as the delimiter.
+   The max length of delimiter is 4.
+   
+   This mib is valid only if sipCfgDialProxyMethod is set to 'pc20'."
+ ::= { sipCfgDialProxyEntry 7 }
+
+sipCfgDhcp60AnnouncementMode OBJECT-TYPE
+     SYNTAX INTEGER {
+         disable(0),
+         enable(1)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION 
+        "Used to enable/disable SIP advertisement in MTA DHCP Option60.
+         This MIB can only be set via the CM configuration file." 
+ ::= { sipConfiguration 38 }
+
+sipCfgCallForwardForbiddenNumbers OBJECT-TYPE
+    SYNTAX DisplayString (SIZE (0..50))
+    MAX-ACCESS read-write
+    STATUS current
+    DESCRIPTION
+        "There are certain phone numbers (eg 911) that Call Forwarding should
+        not accept as forwarding numbers.  This MIB specifies which numbers 
+        are not allowed as forwarding numbers.  This MIB is only settable via
+        config file. Multiple numbers may be specified separated by | as follows:
+        
+        911|900|1900|0
+        
+        Note: the emergency number set in sipCfgEmergencyNumber is also not allowed
+        as a forwarding number."
+ ::= { sipConfiguration 39 } 
+
+sipCfgDefaultG711 OBJECT-TYPE
+ SYNTAX INTEGER{
+                pcmu(0),
+                pcma(8)}
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION
+  "RTP Default Voice or pass-thru codec. This object is only settable during config file 
+   download."
+ DEFVAL { pcmu }
+ ::= { sipConfiguration 40 }
+
+sipCfgGenLinger OBJECT-TYPE
+ SYNTAX Integer32
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION
+  "This integer specifies the wait time in milliseconds for response retransmits (non-INVITE) (Timer K in RFC 3261)."
+ ::= { sipConfiguration 41 }
+
+sipCfgInviteLinger OBJECT-TYPE
+ SYNTAX Integer32
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION
+  "This integer specifies the wait time in milliseconds for response retransmits (INVITE) and the wait time for ACK receipt (Timers D and H in RFC 3261)."
+ ::= { sipConfiguration 42 }
+
+sipCfgTimerB OBJECT-TYPE
+ SYNTAX Integer32
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION
+  "This integer specifies the INVITE transaction timeout timer in seconds(Timer B in RFC 3261)."
+ ::= { sipConfiguration 43 }
+
+sipCfgTimerF OBJECT-TYPE
+ SYNTAX Integer32
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION
+  "This integer specifies the non-INVITE transaction timeout timer in seconds(Timer F in RFC 3261)."
+ ::= { sipConfiguration 44 }
+
+sipCfgRegExpires OBJECT-TYPE
+ SYNTAX Integer32
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION
+  "This integer specifies the preferred registration expiry value (in seconds) sent in the REGISTER message. 
+   If unspecified or the value is set to zero, no expiry value is preferred and none will be sent to
+   the registrar."
+ ::= { sipConfiguration 45 }
+
+sipCfgMaxUDPSize OBJECT-TYPE
+ SYNTAX Integer32
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION
+  "This integer specifies the threshold at which point packets will begin being sent over TCP rather than UDP.  
+   When set to zero, no threshold exists and all packets will be sent using UDP.
+   In TS6.1 this MIB defaults to zero (UDP is always used by default).
+   In TS6.2 this MIB defaults to 1200."
+ ::= { sipConfiguration 46 }
+
+sipCfgSessionExpires OBJECT-TYPE
+ SYNTAX Integer32
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION
+  "This integer specifies the preferred session expiry value (in seconds) sent in the INVITE message.
+   This value defaults to 1800 and the minimum value is 0."
+ ::= { sipConfiguration 47 }
+
+sipCfgPenaltyBoxTimeout OBJECT-TYPE
+ SYNTAX Integer32
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION
+  "This integer specifies the timeout for entries in the SIP Proxy Penalty Box 
+   in HOURS. Default is 24 hours. Note that entries may be evicted from the 
+   Penalty Box before timeout if all known SRV records have failed to respond."
+ ::= { sipConfiguration 48 }
+
+sipCfgDisconnectReorderToneDelay OBJECT-TYPE
+ SYNTAX Unsigned32 (0..180)
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION
+  "This MIB Object specifies the delay between receiving BYE message and playing Disconnect Reorder Tone in seconds "
+ DEFVAL { 5 }   
+ ::= { sipConfiguration 49 }
+
+ sipCfgDistinctiveRingingForCallHold OBJECT-TYPE
+ SYNTAX INTEGER{
+                standard(0),
+                r0(1),
+                r1(2),
+                r2(3),
+                r3(4),
+                r4(5),
+                r5(6),
+                r6(7),
+                r7(8)
+                }
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION
+  "This is the type of distinctive ringing used when call is held"
+ ::= { sipConfiguration 50 }
+
+sipCfgSipFeatureSwitch2 OBJECT-TYPE
+  SYNTAX BITS { 
+      reserved0(0),
+      reserved1(1),
+      reserved2(2),
+      reserved3(3),
+      reserved4(4),
+      reserved5(5),
+      dnsCache(6),
+      unused7(7),
+      unused8(8),
+      unused9(9),
+      unused10(10),
+      unused11(11),
+      unused12(12),
+      unused13(13),
+      unused14(14),
+      unused15(15),
+      unused16(16),
+      unused17(17),
+      unused18(18),
+      unused19(19),
+      unused20(20),
+      unused21(21),
+      unused22(22),
+      unused23(23),
+      unused24(24),
+      unused25(25),
+      unused26(26),
+      unused27(27),
+      unused28(28),
+      unused29(29),
+      unused30(30),
+      unused31(31)
+  }
+  MAX-ACCESS read-write
+  STATUS current
+  DESCRIPTION
+    "This object is like sipCfgSipFeatureSwitch. It is used to enable features of
+     the Arris SIP MTA. From left to right, the specified bit indicates whether 
+     or not the corresponding feature is enabled/disabled.  For example, if the 
+     first bit is set, then the pwdAutoGen feature is enabled. If it is zero, 
+     the feature is disabled.  NO bits are set by default.
+     
+     /** BIT Descriptions **/
+     0x80000000 : reserved on TS6.2/7.
+     0x40000000 : reserved on TS6.2/7.
+     0x20000000 : reserved on TS6.2/7.
+     0x08000000 : reserved on TS6.2/7.
+     0x04000000 : reserved on TS6.2/7.
+     0x02000000 : dnsCache         - Use cached DNS records when receive negative response or no response.
+     "
+  DEFVAL { '00000000'h }
+ ::= { sipConfiguration 51 }
+
+sipCfgMWITargetAddrType OBJECT-TYPE
+ SYNTAX      InetAddressType  
+ MAX-ACCESS  read-write  
+ STATUS      current  
+ DESCRIPTION  
+  " This MIB Object specifies the address type for the MWI subscription target specified in sipCfgMWITargetAddr.
+  If the element sipCfgMWITargetAddr contains a valid IP address,  this element MUST be 'ipv4(1)'."
+ ::= { sipConfiguration 53 }
+
+sipCfgMWITargetAddr OBJECT-TYPE
+ SYNTAX InetAddress
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION
+  "This MIB Object specifies the target address for the MWI subscription, and it is associated with the address 
+   type specified in sipCfgMWITargetAddrType."
+ ::= { sipConfiguration 54 }
+
+sipCfgMWITargetPort OBJECT-TYPE
+ SYNTAX Unsigned32 
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION
+  "This MIB Object specifies the target port for the MWI subscription."
+ DEFVAL { 5060 }   
+ ::= { sipConfiguration 55 }
+END

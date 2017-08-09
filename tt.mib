@@ -1,0 +1,151 @@
+-- $Header: /usr/cvsroot/target/src/wrn/wm/demo/snmpctls/tt.mib,v 1.2 2001/11/07 20:45:03 josh Exp $
+
+--______________________________________________________________________
+--
+--  *** Restricted Rights Legend ***
+--
+--  The programs and information contained herein are licensed only
+--  pursuant to a license agreement that contains use, reverse
+--  engineering, disclosure, and other restrictions; accordingly, it
+--  is "Unpublished - all rights reserved under the applicable
+--  copyright laws".
+--
+--  Use duplication, or disclosure by the Government is subject to
+--  restrictions as set forth in subparagraph (c)(1)(ii) of the Rights
+--  in Technical Data and Computer Licensed Programs clause of DFARS
+--  52.227 7013.
+--
+--  Copyright 2000-2001 Wind River Systems, Inc.
+--  Copyright 1994-1997 Epilogue Technology Corporation.
+--  Copyright 1998 Integrated Systems, Inc.
+--  All rights reserved.
+--
+--  *** Government Use ***
+--
+--  The Licensed Programs and their documentation were developed at
+--  private expense and no part of them is in the public domain.
+--
+--  The Licensed Programs are "Restricted Computer Software" as that
+--  term is defined in Clause 52.227-19 of the Federal Acquisition
+--  Regulations (FAR) and are "Commercial Computer Software" as that
+--  term is defined in Subpart 227.401 of the Department of Defense
+--  Federal Acquisition Regulation Supplement (DFARS).
+--
+--  (i) If the licensed Programs are supplied to the Department of
+--      Defense (DoD), the Licensed Programs are classified as
+--      "Commercial Computer Software" and the Government is acquiring
+--      only "restricted rights" in the Licensed Programs and their
+--      documentation as that term is defined in Clause 52.227
+--      7013(c)(1) of the DFARS, and
+--
+--  (ii) If the Licensed Programs are supplied to any unit or agency
+--      of the United States Government other than DoD, the
+--      Government's rights in the Licensed Programs and their
+--      documentation will be as defined in Clause 52.227-19(c)(2) of
+--      the FAR.
+--______________________________________________________________________
+
+ TEST-TABLE-MIB
+
+--      FORCE-INCLUDE <stdio.h>
+        FORCE-INCLUDE <sys/types.h>
+        FORCE-INCLUDE <wrn/wm/snmp/engine/asn1.h>
+        FORCE-INCLUDE <wrn/wm/snmp/engine/mib.h>
+        FORCE-INCLUDE <wrn/wm/snmp/engine/snmpdefs.h>
+        FORCE-INCLUDE <wrn/wm/snmp/engine/snmp.h>
+        FORCE-INCLUDE <wrn/wm/snmp/engine/auxfuncs.h>
+	FORCE-INCLUDE "tthnd.h"
+
+	DEFAULT get-function-async tt_getproc
+	DEFAULT set-function-async tt_setproc
+	DEFAULT test-function-async tt_testproc
+	DEFAULT next-function-async tt_nextproc
+	DEFAULT cookie (char *)NULL
+
+ DEFINITIONS ::= BEGIN
+
+        IMPORTS enterprises, Counter
+                    FROM RFC1155-SMI
+                OBJECT-TYPE
+                    FROM RFC-1212
+		Counter64
+		    FROM SNMPv2-SMI;
+
+
+epilogue        OBJECT IDENTIFIER ::= { enterprises 12 }
+tt              OBJECT IDENTIFIER ::= { epilogue 9 }
+
+-- test table MIB
+
+testTable OBJECT-TYPE
+	SYNTAX SEQUENCE OF TestTableEntry
+	ACCESS not-accessible
+	STATUS mandatory
+	DESCRIPTION
+		"A table for testing purposes.  This table tries
+		 to contain one column for each snmp type, with
+		 some of them being settable."
+	::= { tt 1 }
+
+testTableEntry OBJECT-TYPE
+	SYNTAX TestTableEntry
+	ACCESS not-accessible
+	STATUS mandatory
+	DESCRIPTION
+		"An entry in the test table."
+	INDEX { ttIndex }
+	::= { testTable 1 }
+
+	TestTableEntry ::=
+		SEQUENCE {
+			ttIndex		OBJECT IDENTIFIER,
+			ttInteger	INTEGER,
+			ttCounter	Counter,
+			ttCounter64	Counter64,
+			ttString	OCTET STRING,
+			ttObjectID	OBJECT IDENTIFIER
+			}
+
+ttIndex OBJECT-TYPE
+	SYNTAX OBJECT IDENTIFIER
+	ACCESS not-accessible
+	STATUS mandatory
+	DESCRIPTION "Index for the test table"
+	::= { testTableEntry 1 }
+
+ttInteger OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-write
+	STATUS mandatory
+	DESCRIPTION ""
+	::= { testTableEntry 2 }
+
+ttCounter OBJECT-TYPE
+	SYNTAX Counter
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION ""
+	::= { testTableEntry 3 }
+
+ttCounter64 OBJECT-TYPE
+	SYNTAX Counter64
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION ""
+	::= { testTableEntry 4 }
+
+ttString  OBJECT-TYPE
+	SYNTAX OCTET STRING
+	ACCESS read-write
+	STATUS mandatory
+	DESCRIPTION ""
+	::= { testTableEntry 5 }
+
+ttObjectID OBJECT-TYPE
+	SYNTAX OBJECT IDENTIFIER
+	ACCESS read-write
+	STATUS mandatory
+	DESCRIPTION ""
+	::= { testTableEntry 6 }
+
+	END

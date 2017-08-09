@@ -1,0 +1,4566 @@
+--#######################################################################
+--#   Copyright [2014] [Cisco Systems, Inc.]
+--# 
+--#   Licensed under the Apache License, Version 2.0 (the \"License\");
+--#   you may not use this file except in compliance with the License.
+--#   You may obtain a copy of the License at
+--# 
+--#       http://www.apache.org/licenses/LICENSE-2.0
+--# 
+--#   Unless required by applicable law or agreed to in writing, software
+--#   distributed under the License is distributed on an \"AS IS\" BASIS,
+--#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--#   See the License for the specific language governing permissions and
+--#   limitations under the License.
+--#######################################################################
+
+RDKB-RG-MIB DEFINITIONS ::= BEGIN
+IMPORTS
+        MODULE-IDENTITY,
+        OBJECT-TYPE,
+        enterprises,
+        Integer32,
+        IpAddress
+                FROM SNMPv2-SMI
+        ifIndex
+                FROM IF-MIB
+        RowStatus,
+        DisplayString,
+        MacAddress,
+        PhysAddress,
+        TruthValue,
+        DateAndTime
+                FROM SNMPv2-TC
+        InetAddressType,
+        InetAddress,
+                InetAddressIPv6,
+        InetPortNumber
+                FROM INET-ADDRESS-MIB
+        SnmpAdminString
+                FROM SNMP-FRAMEWORK-MIB ;
+
+rdkb           OBJECT IDENTIFIER ::= { enterprises 17270 }
+rdkbModules    OBJECT IDENTIFIER ::= { rdkb 50 }
+
+rdkbRg    MODULE-IDENTITY
+        LAST-UPDATED    "201408130000Z"
+        ORGANIZATION    "TBD"
+        CONTACT-INFO    "TBD"
+        DESCRIPTION
+            "Controls the behavior of router/wireless functions.
+             Can be part of CM configuration file."
+
+        ::= { rdkbModules 2 }         
+        
+RdkbRgUserChangedFlag ::= TEXTUAL-CONVENTION  
+    STATUS       current  
+    DESCRIPTION    
+        "WebWizard Setup user changed flag sections.
+        NOTE: Only Bits from 0-21 are supported for legacy web pages"
+    SYNTAX BITS {
+        lanParameters(0),
+        wanMTU(1),
+        wirelessBasic(2),
+        wirelessAdvanced(3),
+        wirelessSecurity(4),
+        wirelessAccessControl(5),
+        fixedCPE(6),
+        ipMacPortFiltering(7),
+        dmzHost(8),
+        blockProxy(9),
+        blockCookies(10),
+        blockJava(11),
+        blockActiveX(12),
+        blockPopup(13),
+        blockFragments(14),
+        detectPortScan(15),
+        detectFlood(16),
+        firewallEvent(17),
+        firewallProtection(18),
+            ipsecPassthru(19),
+            pptpPassthru(20),
+            multicastPassthru(21),
+        blockAnonymousIpWan(22),
+        wanSetup(23),
+        remoteMgmt(24),
+        l2TP(25)
+        }
+
+
+-- RG Device
+
+rdkbRgDevice   OBJECT IDENTIFIER ::=  { rdkbRg 1 }
+
+rdkbRgDeviceBase   OBJECT IDENTIFIER ::=  { rdkbRgDevice 1 }
+
+rdkbRgDeviceMode OBJECT-TYPE
+    SYNTAX INTEGER {
+        multiSsid(1),
+        cableHome11(2),
+                ipv4(3),
+                ipv6(4),
+                dualstack(5) }
+    MAX-ACCESS    read-write
+    STATUS        current
+    DESCRIPTION
+        "Defines the mode of operation for the device.
+        This parameter is stored in non-vol and is Dualstack(5) by default.
+        Setting this object via SNMP will cause
+        the unit to reboot.
+		This MIB will be superseded in the config file by TLV202.
+		This MIB will read the proper value if set from TLV202. 
+		This MIB will be superseded by rdkbRgIpMgmtLanMode inbridge(1) or mixed(4).
+
+		multiSsid(1):Value supports IPv4RG with multiple SSID
+			configuration and bridge mode via rdkbRgIpMgmtLanMode MIB. 
+			Bridge mode is the same as eRouter disabled mode. 
+			IPV4RG is the non eRouter behavior that existed before 
+			in our router products.
+		cableHome11(2): <deprecated>. Mode is not supported for eRouter devices.
+		Ipv4(3): eRouter IPv4 only mode
+		Ipv6(4): eRouter IPv6 only mode
+		Dualstack(5):Default Value.Value supports eRouter IPv4 and IPv6 dualstack 
+		Note: cableHome11(2) is deprecated."
+    DEFVAL { 5 }	
+    ::= { rdkbRgDeviceBase 1 }
+
+
+rdkbRgDeviceResetDefaultEnable OBJECT-TYPE
+    SYNTAX TruthValue
+    MAX-ACCESS read-write
+    STATUS current
+    DESCRIPTION
+        "This object controls the reset to factory default functionality
+         of the gateway. This prevents the local user from using the reset
+         switch to gain access to the setup pages using the default user
+         name and password. The objective is to prevent theft of service
+         from a user who reconfigures the device to add users or change
+         wireless settings.
+         Enable (object set to true):
+          1. Momentary press of the Reset Switch (<5 seconds)
+             DOCSIS restart of the modem (reboot, no reset to factory
+             default values).
+          2. Pressing the reset switch for >5 seconds
+             Reboots and resets of all values (modem and router) to
+             factory default.
+         Disable (object set to false):
+          1. Momentary press of the Reset Switch (<5 seconds)
+             DOCSIS restart of the modem (reboot, no reset to factory
+             default values).
+          2. Pressing the reset switch for >5 seconds
+             Modem reboots and resets only the cable modem settings to
+             factory default values. The router settings should remain and
+             should not NOT reset to factory default."
+    DEFVAL { true }
+    ::= { rdkbRgDeviceBase 2 } 
+
+rdkbRgDeviceRemoteWebAccessEnable OBJECT-TYPE 
+    SYNTAX      TruthValue 
+    MAX-ACCESS  read-write 
+    STATUS      current 
+    DESCRIPTION  
+            "Controls web page access to the WAN IP address on the gateway.
+             If DMS is available in the hardware, and rdkbRgDmsBaseWebRedirect
+             is set to true, enabling this feature means to enable port
+             forwarding for web access to the DMS (to port 80). Note: the
+             entry for this does not appear in port forwarding table or on
+             the web pages. Example of the rule: WAN_IP:8080->DMS_IP:80.
+             This value is stored in non-vol and is false after factory reset.
+             This value can be controlled via a setup web page.
+
+             NOTE: This MIB is applicable only for legacy style web pages"
+    ::= { rdkbRgDeviceBase 3 } 
+
+rdkbRgDeviceRemoteWebAccessPort OBJECT-TYPE 
+    SYNTAX      InetPortNumber 
+    MAX-ACCESS  read-write 
+    STATUS      current 
+    DESCRIPTION  
+            "Defines what port to use for the WAN IP address of the gateway
+             to be able to access RG web pages.
+             This value is to be stored in non-vol and will persist across reboots.
+             Only a factory reset would clear it"
+    DEFVAL { 8080 }
+    ::= { rdkbRgDeviceBase 4 } 
+
+rdkbRgDeviceAdminReadOnly OBJECT-TYPE
+    SYNTAX INTEGER {
+        none(0),
+        wan(1)
+        }
+    MAX-ACCESS    read-write
+    STATUS        obsolete
+    DESCRIPTION
+        "This object can restrict admin right of access to the RG web pages.
+         If set to wan(1), admin will be restricted to read-write access
+         from the WAN interface."
+    DEFVAL { 0 }
+    ::= { rdkbRgDeviceBase 5 }
+
+rdkbRgDeviceLanLanIsolation OBJECT-TYPE
+    SYNTAX INTEGER {
+        disable(0),
+        enable(1)
+        }
+    MAX-ACCESS    read-write
+    STATUS        current
+    DESCRIPTION
+        "This MIB is only available in D3.0 products.
+	  This MIB does not take effect if the modem is in VLAN mode i.e if rdkbRgIpMgmtLanMode.32=vlan(5).
+        Lan-Lan Isolation allows you block IP access between CPEs connected to the Ethernet ports.
+        Use this mib in conjunction with rdkbRgDeviceLanWlanIsolation and rdkbRgDot11BssApIsolation.x for
+	  complete isolation between CPEs connected to the RG.
+        This MIB is written to non-vol and set to disable(0) after a factory reset.
+        disable(0)- No Isolation
+        enable(1)- Enable Isolation feature"
+    DEFVAL { 0 }
+    ::= { rdkbRgDeviceBase 6 }
+
+rdkbRgDeviceLanWlanIsolation OBJECT-TYPE
+    SYNTAX INTEGER {
+        disable(0),
+        enable(1)
+        }
+    MAX-ACCESS    read-write
+    STATUS        current
+    DESCRIPTION
+        "This MIB is only available in D3.0 products.
+        This MIB does not take effect if the modem is in VLAN mode i.e if rdkbRgIpMgmtLanMode.32=vlan(5).
+        Lan-Wlan Isolation allows you block IP access between CPEs connected to the Ethernet port and 
+        Wireless SSIDs.
+        Use this mib in conjunction with rdkbRgDeviceLanLanIsolation and rdkbRgDot11BssApIsolation.x for
+	  complete isolation between CPEs connected to the RG.        
+        This MIB is written to non-vol and set to disable(0) after a factory reset.
+        disable(0)- No Isolation
+        enable(1)- Enable Isolation feature"
+    DEFVAL { 0 }
+    ::= { rdkbRgDeviceBase 7 }
+	
+rdkbRgDeviceIpv6Trans OBJECT-TYPE
+    SYNTAX INTEGER {
+        disable(0),
+        dslite(1)
+        }
+    MAX-ACCESS    read-only
+    STATUS        current
+    DESCRIPTION
+        "This MIB will control which IPv6 transition technology is enabled on the device.
+        After setting this MIB to disable in the config file, IPv4 traffic will pass normally
+                through the device. When switched to dslite, the DSLite feature will be enabled.
+                If eRouter is in IPv6-only mode, DS Lite will tunnel IPv4 traffic over IPv6 to the AFTR
+		address specified either manually or in the DHCPv6 option-64. See rdkbRgDslite MIB tree
+                for more details.
+        If this setting is changed by the config file, the CM will reboot.
+        This MIB is written to non-vol and set to disable(0) after a factory reset.
+        disable(0) - No technology is enabled
+        enable(1) - DS lite feature is enabled"
+    DEFVAL { 0 }
+    ::= { rdkbRgDeviceBase 8 }
+
+rdkbRgDeviceIpv6Passthrough OBJECT-TYPE
+     SYNTAX INTEGER {
+        disable(0),
+        enable(1)
+        }
+    MAX-ACCESS    read-write
+    STATUS        current
+    DESCRIPTION
+        "This MIB controls IPv6 passthrough on the RG and is applicable in bridge and router modes.
+
+          When disabled the RG will function without any IPv6 passthrough
+
+          When IPv6 passthrough is enabled in Bridge Mode the RG will drop all IPv4 traffic
+
+          When IPv6 passthrough is enabled in router mode the RG will operate as normal for IPv4 traffic, but all IPv6 traffic will passthrough
+
+          This MIB requires CM reboot.
+
+          This MIB is written to non-vol and set to disable(0) after a factory reset."
+
+    DEFVAL { 0 }
+    ::= { rdkbRgDeviceBase 9 }
+    
+    
+rdkbRgDeviceMocaResetCount OBJECT-TYPE
+        SYNTAX Unsigned32
+        MAX-ACCESS read-only
+        STATUS current
+        DESCRIPTION
+                "Returns the reset count of Moca.It includes solicited resets and also the internal resets that
+                 the driver goes through when the MoCA link is not formed within certain time frame."
+        ::= { rdkbRgDeviceBase 10 }  
+        
+rdkbRgDeviceFactoryResetCount OBJECT-TYPE
+        SYNTAX Unsigned32
+        MAX-ACCESS read-only
+        STATUS current
+        DESCRIPTION
+                "Counts the factory reset done through GUI,SNMP, TR-069, WebPA, Reset Button ."
+        ::= { rdkbRgDeviceBase 11 } 
+        
+rdkbRgDeviceClearResetCount OBJECT-TYPE
+        SYNTAX TruthValue
+        MAX-ACCESS read-write
+        STATUS current
+        DESCRIPTION
+                " True - Clears all the reset counts."
+        ::= { rdkbRgDeviceBase 12 }                 
+
+
+rdkbRgDeviceFactoryReset	OBJECT-TYPE
+    SYNTAX INTEGER {
+                false(0),
+        routerAndWifi(1),
+        routerOnly(2),
+        wifi(3)
+        }
+        MAX-ACCESS      read-write
+        STATUS          current
+        DESCRIPTION
+        "Set routerAndWifi(1) to restore default settings of both the router and wifi.
+                Set routerOnly(2) to restore default settings of the router.
+                Set wifi(3) to restore default settings of the wifi.
+                Return false(0) when read."
+        DEFVAL { 0 }
+	::= { rdkbRgDeviceBase 1002 }
+
+rdkbRgDeviceReset	OBJECT-TYPE
+    SYNTAX INTEGER {
+                false(0),
+        routerAndWifi(1),
+        routerOnly(2),
+        wifi(3)
+        }
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+                "Set routerAndWifi(1) to reboot the router and WiFi.
+                Set routerOnly(2) to reboot the router.
+                Set wifi(3) to reboot the WiFi.
+                Return false(0) when read."
+        DEFVAL { 0 }
+	::= { rdkbRgDeviceBase 1003 }
+
+rdkbRgDeviceCmMacReset	OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+                "Set to true(1) perform reinit CM MAC only to same DS/US.
+                 Reading this object always returns false(2)."
+        DEFVAL { false }
+    ::= { rdkbRgDeviceBase 1004 }
+
+rdkbRgDeviceConfigureWiFi OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+                "Indicates whether RDKB device is in captive portal mode.
+                 true: indicates device is in captive portal
+                 false: indicates device is out of captive portal"
+        DEFVAL { false }
+    ::= { rdkbRgDeviceBase 1005 }
+
+
+rdkbRgPlatformCapable OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+                " indicates RDKB capability."
+        DEFVAL { true }
+    ::= { rdkbRgDeviceBase 1006 }
+
+rdkbRgCaptivePortalEnable OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+                "Indicates whether RDKB device is in captive portal mode.
+                 true: indicates device is in captive portal
+                 false: indicates device is out of captive portal"
+        DEFVAL { true }
+    ::= { rdkbRgDeviceBase 1007 }
+            
+-- Node rdkbRgDevice 2,3 removed             
+     
+rdkbRgDeviceConfiguration   OBJECT IDENTIFIER ::=  { rdkbRgDevice 4 }
+
+rdkbRgDeviceConfigFilename OBJECT-TYPE
+    SYNTAX SnmpAdminString
+    MAX-ACCESS    read-write
+    STATUS        current
+    DESCRIPTION
+        "Configuration filename from DHCP ACK."
+    ::= { rdkbRgDeviceConfiguration 1 }
+
+rdkbRgDeviceConfigStatus OBJECT-TYPE
+    SYNTAX INTEGER {
+        notSpecified(1),
+        inProgress(2),
+        success(3),
+        errorServer(4),
+        errorFileNotFound(5),
+        errorBadFile(6),
+        download(7)
+        }
+    MAX-ACCESS read-write
+    STATUS current
+    DESCRIPTION
+        "Status of configuration file download.
+         - notSpecified(1): DHCP ACK did not contain necessary information
+         - inProgress(2): Configuration file is being downloaded
+         - success(3): configuration file download completed successfully
+         - errorServer(4): TFTP server did not respond
+         - errorFileNotFound(5): no file on the server
+         - errorBadFile(6): the file is not good, cannot be processed
+         - download(7): commands the unit to download configuration file."
+    ::= { rdkbRgDeviceConfiguration 2 }
+
+rdkbRgDeviceUserChangedFlag OBJECT-TYPE 
+    SYNTAX RdkbRgUserChangedFlag
+    MAX-ACCESS read-write     
+    STATUS current 
+    DESCRIPTION 
+       "Specifies which user changed flags are set. The value of (1) means
+        that user changed flag value is set; the value of (0) means that
+        the user changed flag is not set.
+        The user changed flags are stored in non-vol.
+        Default value after factory reset is 0x00000000
+        NOTE: Legacy style web pages only support bits from 0-21
+        "
+    ::= { rdkbRgDeviceConfiguration 3 }
+
+rdkbRgDeviceConfigSnmpEnable OBJECT-TYPE
+    SYNTAX BITS {
+        rgWan(0),
+        rgDualIp(1),
+                rgLanIp(2),
+                rgPortForward(3)
+    }
+    MAX-ACCESS    read-write
+    STATUS        current
+    DESCRIPTION
+        "Controls SNMP manager status on interfaces. If bit set to 0, the SNMP
+         access is disabled. If bit set to 1, the SNMP access is enabled.
+                 This MIB only applies to IPv4RG mode and is not relevant in
+                 eRouter modes. "
+    DEFVAL { '00'h }
+    ::= { rdkbRgDeviceConfiguration 4 }
+
+rdkbRgDeviceConfigIgnore  OBJECT-TYPE
+    SYNTAX INTEGER {
+        require(0),
+        notRequire(1),
+        notDownload(2)
+        }
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "This object controls if RG configuration file is to be downloaded.
+         require(0): per specification, if DHCP contains parameters for the
+                     file dowload, the RG MUST try to download it.
+         notRequire(1): when config file download fails after exponential backoff,
+                        RG will not retry DHCP and continue to be operational.
+         notDownload(2): RG will not download config file.
+         This MIB can be only in CM configuration file."
+    DEFVAL { 0 }
+    ::= { rdkbRgDeviceConfiguration 5 }
+
+-- removed rdkbRgDevice node 5,6          
+
+
+-- MIBs to poll IANA / PD info for eRouter interface
+
+rdkbRgDeviceIanaContent   OBJECT IDENTIFIER ::=  { rdkbRgDevice 7 }
+
+rdkbRgDeviceIanaIAID OBJECT-TYPE
+        SYNTAX Unsigned32
+        MAX-ACCESS read-only
+        STATUS current
+        DESCRIPTION
+                "Returns the IAID value embedded in the IA_NA for the
+eRouter's DHCPv6 lease."
+        ::= { rdkbRgDeviceIanaContent 1 }
+
+rdkbRgDeviceIanaT1 OBJECT-TYPE
+        SYNTAX Integer32
+        MAX-ACCESS read-only
+        STATUS current
+        DESCRIPTION
+                "Returns the T1 value embedded in the IA_NA for the eRouter's
+DHCPv6 lease."
+        ::= { rdkbRgDeviceIanaContent 2 }
+
+rdkbRgDeviceIanaT2 OBJECT-TYPE
+        SYNTAX Integer32
+        MAX-ACCESS read-only
+        STATUS current
+        DESCRIPTION
+                "Returns the T2 value embedded in the IA_NA for the eRouter's
+DHCPv6 lease."
+        ::= { rdkbRgDeviceIanaContent 3 }
+
+rdkbRgDeviceIanaTable OBJECT-TYPE
+        SYNTAX SEQUENCE OF RdkbRgDeviceIanaEntry
+        MAX-ACCESS not-accessible
+        STATUS current
+        DESCRIPTION
+                "Table of IA Address entries associated with IA_NA for the
+eRouter's DHCPv6 lease."
+        ::= { rdkbRgDeviceIanaContent 4 }
+
+rdkbRgDeviceIanaEntry OBJECT-TYPE
+    SYNTAX      RdkbRgDeviceIanaEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "Table of IA Address entries associated with IA_NA for the
+eRouter's DHCPv6 lease."
+    INDEX { rdkbRgDeviceIanaIndex }
+    ::= { rdkbRgDeviceIanaTable 1 }
+
+RdkbRgDeviceIanaEntry ::= SEQUENCE {
+    rdkbRgDeviceIanaIndex              INTEGER,
+    rdkbRgDeviceIanaValue              InetAddress,
+    rdkbRgDeviceIanaPreferredLifetime  Integer32,
+    rdkbRgDeviceIanaValidLifetime      Integer32
+    }
+
+rdkbRgDeviceIanaIndex OBJECT-TYPE
+    SYNTAX      INTEGER (1..4)
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "The index"
+    ::= { rdkbRgDeviceIanaEntry 1 }
+
+rdkbRgDeviceIanaValue OBJECT-TYPE
+    SYNTAX      InetAddress
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+            "IPv6 address provided to the eRouter WAN interface via DHCPv6."
+    ::= { rdkbRgDeviceIanaEntry 2 }
+
+rdkbRgDeviceIanaPreferredLifetime OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+            "Preferred Lifetime setting for an IPv6 address assigned to the
+eRouter."
+    ::= { rdkbRgDeviceIanaEntry 3 }
+
+rdkbRgDeviceIanaValidLifetime OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+            "Valid Lifetime setting for an IPv6 address assigned to the
+eRouter."
+    ::= { rdkbRgDeviceIanaEntry 4 }
+
+
+
+rdkbRgDeviceIapdContent   OBJECT IDENTIFIER ::=  { rdkbRgDevice 8 }
+
+rdkbRgDeviceIapdIAID OBJECT-TYPE
+        SYNTAX Unsigned32
+        MAX-ACCESS read-only
+        STATUS current
+        DESCRIPTION
+                "Returns the IAID value embedded in the IA_PD for the
+eRouter's DHCPv6 lease."
+        ::= { rdkbRgDeviceIapdContent 1 }
+
+rdkbRgDeviceIapdT1 OBJECT-TYPE
+        SYNTAX Integer32
+        MAX-ACCESS read-only
+        STATUS current
+        DESCRIPTION
+                "Returns the T1 value embedded in the IA_PD for the eRouter's
+DHCPv6 lease."
+        ::= { rdkbRgDeviceIapdContent 2 }
+
+rdkbRgDeviceIapdT2 OBJECT-TYPE
+        SYNTAX Integer32
+        MAX-ACCESS read-only
+        STATUS current
+        DESCRIPTION
+                "Returns the T2 value embedded in the IA_PD for the eRouter's
+DHCPv6 lease."
+        ::= { rdkbRgDeviceIapdContent 3 }
+
+rdkbRgDeviceIapdTable OBJECT-TYPE
+        SYNTAX SEQUENCE OF RdkbRgDeviceIapdEntry
+        MAX-ACCESS not-accessible
+        STATUS current
+        DESCRIPTION
+                "Table of IA Prefix entries associated with IA_PD for the
+eRouter's DHCPv6 lease."
+        ::= { rdkbRgDeviceIapdContent 4 }
+
+rdkbRgDeviceIapdEntry OBJECT-TYPE
+    SYNTAX      RdkbRgDeviceIapdEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "Table of IA Address entries associated with IA_PD for the
+eRouter's DHCPv6 lease."
+    INDEX { rdkbRgDeviceIapdIndex }
+    ::= { rdkbRgDeviceIapdTable 1 }
+
+RdkbRgDeviceIapdEntry ::= SEQUENCE {
+    rdkbRgDeviceIapdIndex              INTEGER,
+    rdkbRgDeviceIapdPreferredLifetime  Integer32,
+    rdkbRgDeviceIapdValidLifetime      Integer32,
+    rdkbRgDeviceIapdPrefixLength       INTEGER,
+    rdkbRgDeviceIapdPrefixValue        InetAddress
+    }
+
+rdkbRgDeviceIapdIndex OBJECT-TYPE
+    SYNTAX      INTEGER (1..4)
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "The index"
+    ::= { rdkbRgDeviceIapdEntry 1 }
+
+rdkbRgDeviceIapdPreferredLifetime OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+            "Preferred Lifetime setting for an IPv6 address assigned to the
+eRouter."
+    ::= { rdkbRgDeviceIapdEntry 2 }
+
+rdkbRgDeviceIapdValidLifetime OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+            "Valid Lifetime setting for an IPv6 address assigned to the
+eRouter."
+    ::= { rdkbRgDeviceIapdEntry 3 }
+
+rdkbRgDeviceIapdPrefixLength OBJECT-TYPE
+        SYNTAX          INTEGER
+        MAX-ACCESS      read-only
+        STATUS          current
+        DESCRIPTION
+                "Length (in bits) for this prefix."
+        ::= { rdkbRgDeviceIapdEntry 4 }
+
+rdkbRgDeviceIapdPrefixValue OBJECT-TYPE
+        SYNTAX          InetAddress
+        MAX-ACCESS      read-only
+        STATUS          current
+        DESCRIPTION
+                "Prefix address specified in the IA_PD."
+        ::= { rdkbRgDeviceIapdEntry 5 }
+
+rdkbRgDeviceCM   OBJECT IDENTIFIER ::=  { rdkbRgDevice 9 }
+
+rdkbRgDeviceCMResetCount OBJECT-TYPE
+        SYNTAX Unsigned32
+        MAX-ACCESS read-only
+        STATUS current
+        DESCRIPTION
+                "Incremented every time the unit boots up.
+				counts all resets of the TG1682 unit including:
+				operator initiated resets (SNMP, TR-69, GUI, CLI)
+				user initiated resets (GUI, Reset Button)
+				system initiated resets (SW exceptions)."
+        ::= { rdkbRgDeviceCM 1 }
+
+rdkbRgDeviceLocalResetCount OBJECT-TYPE
+        SYNTAX Unsigned32
+        MAX-ACCESS read-only
+        STATUS current
+        DESCRIPTION
+                "Incremented every time the local reset button is pressed."
+        ::= { rdkbRgDeviceCM 2 }
+
+rdkbRgDeviceDocsisResetCount OBJECT-TYPE
+        SYNTAX Unsigned32
+        MAX-ACCESS read-only
+        STATUS current
+        DESCRIPTION
+                "Incremented every time the DOCSIS system is 
+                	initialized (includes startup, and re-init MAC operations)."
+        ::= { rdkbRgDeviceCM 3 }
+
+rdkbRgDeviceErouterResetCount OBJECT-TYPE
+        SYNTAX Unsigned32
+        MAX-ACCESS read-only
+        STATUS current
+        DESCRIPTION
+                " Incremented every time the eRouter system is initialized"
+        ::= { rdkbRgDeviceCM 4 }
+
+rdkbRgDeviceMTA   OBJECT IDENTIFIER ::=  { rdkbRgDevice 10 }
+
+rdkbRgDeviceMTAResetCount OBJECT-TYPE
+        SYNTAX Unsigned32
+        MAX-ACCESS read-only
+        STATUS current
+        DESCRIPTION
+                " Incremented every time the eMTA system is initialized."
+        ::= { rdkbRgDeviceMTA 1 }
+
+rdkbRgDeviceLineResetCount OBJECT-TYPE
+        SYNTAX Unsigned32
+        MAX-ACCESS read-only
+        STATUS current
+        DESCRIPTION
+                " Incremented every time a voice line is reset."
+        ::= { rdkbRgDeviceMTA 2 }
+
+
+
+-- ******************
+-- ***** 802.11 *****
+-- ******************
+
+rdkbRgDot11 OBJECT IDENTIFIER ::=  { rdkbRg 2 }
+
+
+
+
+ -- node rdkbRgDot11 1 removed
+
+rdkbRgDot11Bss OBJECT IDENTIFIER ::= { rdkbRgDot11 2 }
+
+
+rdkbRgDot11BssTable  OBJECT-TYPE
+    SYNTAX      SEQUENCE OF RdkbRgDot11BssEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "BSS table"
+    ::= { rdkbRgDot11Bss 1 }
+    
+rdkbRgDot11BssEntry OBJECT-TYPE
+    SYNTAX  	RdkbRgDot11BssEntry    
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "A row in the table which represents parameters for SSID."
+    INDEX   { ifIndex }
+    ::= { rdkbRgDot11BssTable 1 }
+    
+RdkbRgDot11BssEntry ::= 
+    SEQUENCE {
+        rdkbRgDot11BssId            PhysAddress,
+        rdkbRgDot11BssEnable        INTEGER,
+        rdkbRgDot11BssSsid          OCTET STRING,
+        rdkbRgDot11BssSecurityMode  INTEGER,
+        rdkbRgDot11BssClosedNetwork TruthValue,
+        rdkbRgDot11BssAccessMode    INTEGER,
+        rdkbRgDot11BssLanAccess     INTEGER,
+        rdkbRgDot11BssDsBwReserve   INTEGER,
+        rdkbRgDot11BssDsBwPriority  INTEGER,
+        rdkbRgDot11BssMaxNumSta     INTEGER,
+        rdkbRgDot11BssCountStaAsCpe TruthValue,
+        rdkbRgDot11BssUserStatus    INTEGER,
+        rdkbRgDot11BssHotSpot       TruthValue,
+        rdkbRgDot11BssApIsolation   INTEGER,
+	rdkbRgDot11BssDefaultSSID   OCTET STRING 
+        }
+
+rdkbRgDot11BssId OBJECT-TYPE
+    SYNTAX      PhysAddress
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Returns the BSSID"
+    ::= { rdkbRgDot11BssEntry 1 }
+
+rdkbRgDot11BssEnable OBJECT-TYPE
+    SYNTAX INTEGER {
+        enable(1),
+        disable(2),
+        enableOnline(3)
+        }
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Controls the BSS state.
+         When set to enableOnline(3), the SSID is enabled only
+         when the cable modem is online. When the modem changes
+         state to offline, the AP will send dissasociation messages
+         to the STAs connected to the SSID and then disable.
+         The value of primary BSS is stored in non-vol and is enabled(1)
+         after factory reset.
+         The other BSSs are disabled by default. If other
+         BSS's SSID name is not defined, the BSS will not
+         be enabled."
+    ::= { rdkbRgDot11BssEntry 2 }
+
+rdkbRgDot11BssSsid OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE(0..32))
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Controls and reflects the service set identifier.
+         The value of primary BSS is stored in non-vol and is
+         empty after factory reset.
+         If other BSS's SSID name is not defined, the BSS
+         will not be enabled."
+    ::= { rdkbRgDot11BssEntry 3 }
+
+rdkbRgDot11BssSecurityMode OBJECT-TYPE
+    SYNTAX INTEGER {
+        disabled(0),
+        wep(1),
+        wpaPsk(2),
+        wpa2Psk(3),
+        wpaEnterprise(4),
+        wpa2Enterprise(5),
+        --radiusWep(6)
+        wpaWpa2Psk(7),
+        wpaWpa2Enterprise(8)
+        }
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Secrity for BSS.
+         Beacause WPA2 is backwords compatible with WPA, setting this
+         object to wpaWpa2Psk(7) is allowed and has the same effect as
+         setting to wpa2Psk(3). The same is true for wpaWpa2Enterprise(8)
+         and wpa2Enterprise(5).
+         The value for primary BSS is stored in non-vol and is wpaWpa2Psk(7)
+         after factory reset.
+         For each other BSS security has to be included in configuration
+         file or the BSS will be disabled."
+    ::= { rdkbRgDot11BssEntry 4 }
+
+rdkbRgDot11BssClosedNetwork OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Controls whether the device will operate in closed network mode.  If
+         set to true(1), then the network mode is closed and the SSID will not
+         be broadcast in beacon packets.  If set to false(2), then the network
+         mode is open and the SSID will be broadcast in beacon packets.
+         The value for primary BSS is stored in non-vol.
+         The default value for other BSSs is false."
+    ::= { rdkbRgDot11BssEntry 5 }
+
+rdkbRgDot11BssAccessMode OBJECT-TYPE
+    SYNTAX      INTEGER {
+                allowAny(0),
+                allowList(1),
+                denyList(2)
+    }
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Controls what stations will be given access to the device.  If set to
+         allowAny(0), then any station will be allowed to connect.  If set
+         to allowList(1), then only stations whose MAC address appears in
+         the rdkbRgDot11AccessMacTable will be allowed to connect.
+         The value for primary BSS is stored in non-vol.
+         The default value for other BSSs is 0."
+    ::= { rdkbRgDot11BssEntry 6 }
+
+-- not implemented
+rdkbRgDot11BssLanAccess OBJECT-TYPE
+    SYNTAX INTEGER {
+        lan(1),
+        guest(2)
+        }
+    MAX-ACCESS read-write
+    STATUS current
+    DESCRIPTION
+        "If set to lan(1), this service set will be authorized as a member of
+         the local area network.  If set to guest(2), this service set will
+         have access to the wide area internet, but will have restricted access
+         to the local area network.
+         Default values are lan(1) for the primary BSS and guest(2) for other BSSs.
+         NOTE: NOT IMPLEMENTED"
+    ::= { rdkbRgDot11BssEntry 8 }
+
+rdkbRgDot11BssDsBwReserve OBJECT-TYPE
+    SYNTAX INTEGER
+    UNITS "Bps"
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Controls the downstream (from AP to client) throughput
+         in Bytes per second from AP to client on a BSS.
+         This object reserves the throughput for a BSS. The rest of
+         leftover bandwidth is assigned based on BSS priority.
+         Note: if the reserved bandwidth is not used, it is shared
+         with other BSSs based on their priority.
+         If set to 0 there is no reservation.
+
+         Example:
+         BSS 1, 2 and 3 have reservation of 3Mb/s each. BSS 1 is higher priority
+         than 2, which is higher than 3.
+         - only BSS 3 transmits full bandwidth traffic: BSS 3 gets full bandwidth
+         - BSS 2 starts transmitting at 2 Mb/s: BSS 2 gets 2 Mb/s, BSS 3 gets
+           full-2 Mb/s
+         - BSS 2 increases to 4 Mb/s: BSS 3 gets full-4 Mb/s, BSS 2 gets 4 Mb/s
+         - BSS 2 increases to full: BSS 3 gets 3 Mb/s, BSS 2 gets full-3 Mb/s
+         - BSS 1 starts transmitting at 2 Mb/s: BSS 3 gets 3 mbps, BSS 2 gets
+           full-5 Mb/s, BSS 1 gets 2 Mb/s
+         - BSS 1 increases to full: BSS 3 gets 3 Mb/s, BSS 2 gets 3 Mb/s, BSS 1
+           gets full-6 Mb/s
+           NOTE: NOT IMPLEMENTED"
+    DEFVAL { 0 }
+    ::= { rdkbRgDot11BssEntry 9 }
+
+rdkbRgDot11BssDsBwPriority OBJECT-TYPE
+    SYNTAX INTEGER (1..4)
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Sets the priority for non-reserved bandwidth. 1 is the highest priority.
+         If BSSs use the same priority, they get bandwidth based on contention.
+         NOTE: NOT IMPLEMENTED"
+    DEFVAL { 4 }
+    ::= { rdkbRgDot11BssEntry 10 }
+
+rdkbRgDot11BssMaxNumSta OBJECT-TYPE
+    SYNTAX INTEGER (1..128)
+    MAX-ACCESS read-write
+    STATUS current
+    DESCRIPTION
+        "This object defines the maximum number of STAs that can connect to
+         this SSID. Note that the maximum number of STA accross all SSIDs in
+         the AP is 128.
+         Default value is 128 for all SSIDs.
+         The value for primary BSS is stored in non-vol."
+    ::= { rdkbRgDot11BssEntry 11 }
+
+rdkbRgDot11BssCountStaAsCpe OBJECT-TYPE
+    SYNTAX TruthValue
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "STAs in Max-Count of CPEs (Max number of CPE in CM config file),
+         default per eDOCSIS spec.
+         This setting is used to control counting STAs in Max-Count of CPEs.
+         false: Do not count STAs as a CPE
+         true: Count STAs as a CPE
+         This object applies when the BSS is in bridge mode. In router mode
+         the STAs are behind the NAT and do not count towards max-CPE anyway.
+         Note: applies only to secondary BSSs."
+    DEFVAL { true }
+    ::= { rdkbRgDot11BssEntry 12 }
+
+rdkbRgDot11BssUserStatus OBJECT-TYPE
+    SYNTAX INTEGER {
+        enable(1),
+        disable(2)
+        }
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Provides the BSS Id Web UI or Wireless ON/OFF (if exist) status that
+                  is set by the user. If the user can press the Wireless ON/OFF (if
+                  exist) button and it\BFs status can be seen in BSS ID Web UI. If user
+                  changes access point status in Web UI, it will reflect the status of
+                  Wireless ON/OFF LED."
+    ::= { rdkbRgDot11BssEntry 13 }
+
+rdkbRgDot11BssHotSpot OBJECT-TYPE
+    SYNTAX TruthValue
+    MAX-ACCESS read-write
+    STATUS current
+    DESCRIPTION
+        "Determines/Sets whether this BSS is a HotSpot BSS.  This allows the MSO to
+                 specify which BSS is configured for Hotspot Operation.
+         Note: applies only to Guest BSSs (non primary)."
+    DEFVAL { false }
+    ::= { rdkbRgDot11BssEntry 14 }
+
+
+rdkbRgDot11BssApIsolation OBJECT-TYPE
+    SYNTAX INTEGER {
+        disable(0),
+        enable(1)
+        }
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "This MIB is only available in D3.0 products.
+        AP Isolation (Access Point Isolation) allows you to isloate traffic between CPEs on
+        the same Wifi SSID. This allows a measure of security to prevent hackers from accessing other CPEs in
+        a public Wifi environment.
+        Ex. When this MIB is enabled you can not ping between CPEs connected to the same SSID.
+        AP Isolation is settable per SSID in either VLAN or non VLAN modes.
+        This MIB is written to non-vol and set to disable(0) after a factory reset.
+        disable(0)- No AP Isolation
+        enable(1)- Enable AP Isolation feature."
+    DEFVAL { 0 }        
+    ::= { rdkbRgDot11BssEntry 15 }
+
+rdkbRgDot11BssDefaultSSID OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE(0..32))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Return the Default SSID"
+    ::= { rdkbRgDot11BssEntry 16 }
+
+-- removed node rdkbRgDot11Bss 2
+
+-- removed node rdkbRgDot11Bss 3
+	
+-- ******************
+-- PRIVACY PARAMETERS
+-- ******************
+
+-- rdkbRgDot11MgmtPrivacy contains objects from the 'Privacy' web page
+
+rdkbRgDot11Privacy OBJECT IDENTIFIER ::= { rdkbRgDot11 3 }
+
+
+-- WPA
+
+rdkbRgDot11WpaTable  OBJECT-TYPE
+    SYNTAX      SEQUENCE OF RdkbRgDot11WpaEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "WPA table"
+    ::= { rdkbRgDot11Privacy 1 }
+    
+rdkbRgDot11WpaEntry OBJECT-TYPE
+    SYNTAX      RdkbRgDot11WpaEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "A row in the table which represents WPA parameters for BSS."
+    INDEX   { ifIndex }
+    ::= { rdkbRgDot11WpaTable 1 }
+    
+RdkbRgDot11WpaEntry ::= 
+    SEQUENCE    {
+        rdkbRgDot11WpaAlgorithm          INTEGER,
+        rdkbRgDot11WpaPreSharedKey       OCTET STRING,
+        rdkbRgDot11WpaGroupRekeyInterval INTEGER,
+        rdkbRgDot11WpaDefaultPreSharedKey OCTET STRING
+    }
+
+rdkbRgDot11WpaAlgorithm OBJECT-TYPE
+    SYNTAX INTEGER {
+        tkip(0),
+        aes(1),
+        tkipPlusAes(2)
+        }
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "The value of tkip(0) is not allowed when security is WPA2.
+         The value for primary BSS is stored in non-vol and tkipPlusAes(2)
+         after factory reset.
+         The default value for other BSSs is tkip."
+    ::= { rdkbRgDot11WpaEntry 1 }
+
+rdkbRgDot11WpaPreSharedKey OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE(8..64))
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Sets the WPA Pre-Shared Key (PSK).  This value MUST be either a
+         64-digit hexadecimal number, OR a 8 to 63 character ASCII string.
+         The value for primary BSS is stored in non-vol and is the serial
+         number of the device after factory reset.
+         The default value for other BSSs is 8 0's.
+         This object return an empty string when read."
+    ::= { rdkbRgDot11WpaEntry 2 }
+    
+rdkbRgDot11WpaGroupRekeyInterval OBJECT-TYPE
+    SYNTAX      INTEGER
+    UNITS       "seconds"
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Sets the WPA Group Rekey Interval in seconds. Set to zero to disable
+         periodic rekeying.
+         The value for primary BSS is stored in non-vol and is 3600 after
+         factory reset.
+         The default value for other BSSs is 3600."
+    ::= { rdkbRgDot11WpaEntry 3 }
+
+rdkbRgDot11WpaDefaultPreSharedKey OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE(8..64))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "gets the WPA Default Pre-Shared Key (PSK)."
+    ::= { rdkbRgDot11WpaEntry 4 }
+
+-- RADIUS
+
+rdkbRgDot11RadiusTable  OBJECT-TYPE
+    SYNTAX      SEQUENCE OF RdkbRgDot11RadiusEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "WPA table"
+    ::= { rdkbRgDot11Privacy 2 }
+    
+rdkbRgDot11RadiusEntry OBJECT-TYPE
+    SYNTAX      RdkbRgDot11RadiusEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "A row in the table which represents WPA parameters for BSS."
+    INDEX   { ifIndex }
+    ::= { rdkbRgDot11RadiusTable 1 }
+
+RdkbRgDot11RadiusEntry ::= 
+    SEQUENCE    {
+        rdkbRgDot11RadiusAddressType    InetAddressType,
+        rdkbRgDot11RadiusAddress        InetAddress,
+        rdkbRgDot11RadiusPort           InetPortNumber,
+        rdkbRgDot11RadiusKey            DisplayString,
+        rdkbRgDot11RadiusReAuthInterval INTEGER
+    }
+
+
+rdkbRgDot11RadiusAddressType OBJECT-TYPE
+    SYNTAX      InetAddressType
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+            "Type of RADIUS server IP address."
+    DEFVAL { ipv4 }
+    ::= { rdkbRgDot11RadiusEntry 1 }
+
+
+rdkbRgDot11RadiusAddress OBJECT-TYPE
+    SYNTAX      InetAddress
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Sets RADIUS server IP address.
+         The value for primary BSS is stored in non-vol and is 0.0.0.0
+         after factory reset.
+         The default value for other BSSs is 0.0.0.0."
+    ::= { rdkbRgDot11RadiusEntry 2 }
+
+rdkbRgDot11RadiusPort OBJECT-TYPE
+    SYNTAX      InetPortNumber
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Sets the UDP port used to communicate with the RADIUS server.
+         The value for primary BSS is stored in non-vol and is 1645
+         after factory reset.
+         The default value for other BSSs is 1645."
+    ::= { rdkbRgDot11RadiusEntry 3 }
+    
+rdkbRgDot11RadiusKey OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Sets or displays the RADIUS key.
+         The value for primary BSS is stored in non-vol and is null
+         after factory reset.
+         The default value for other BSSs is null.
+         This object return an empty string when read."
+    ::= { rdkbRgDot11RadiusEntry 4 }
+
+rdkbRgDot11RadiusReAuthInterval OBJECT-TYPE
+    SYNTAX      INTEGER
+    UNITS       "seconds"
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Sets the RADIUS Rekey Interval in seconds.
+         Set to zero to disable periodic rekeying.
+         The value for primary BSS is stored in non-vol and is 3600
+         after factory reset.
+         The default value for other BSSs is 3600."
+    ::= { rdkbRgDot11RadiusEntry 5 }
+
+rdkbRgDot11SecondaryRadiusAddress OBJECT-TYPE
+    SYNTAX      InetAddress
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Sets Secondary RADIUS server IP address.
+         The value for secondary BSS is stored in non-vol and is 0.0.0.0
+         after factory reset.
+         The default value for other BSSs is 0.0.0.0."
+    ::= { rdkbRgDot11RadiusEntry 6 }
+
+rdkbRgDot11SecondaryRadiusPort OBJECT-TYPE
+    SYNTAX      InetPortNumber
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Sets the UDP port used to communicate with the Secondary RADIUS server.
+         The value for secondary BSS is stored in non-vol and is 1645
+         after factory reset.
+         The default value for other BSSs is 1645."
+    ::= { rdkbRgDot11RadiusEntry 7 }
+    
+rdkbRgDot11SecondaryRadiusKey OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Sets or displays the Secondary RADIUS key.
+         The value for secondary BSS is stored in non-vol and is null
+         after factory reset.
+         The default value for other BSSs is null.
+         This object return an empty string when read."
+    ::= { rdkbRgDot11RadiusEntry 8 }
+
+-- WEP
+
+rdkbRgDot11WepTable  OBJECT-TYPE
+    SYNTAX      SEQUENCE OF RdkbRgDot11WepEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "WEP table"
+    ::= { rdkbRgDot11Privacy 3 }
+    
+rdkbRgDot11WepEntry OBJECT-TYPE
+    SYNTAX      RdkbRgDot11WepEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "A row in the table which represents WPA parameters for BSS."
+    INDEX   { ifIndex }
+    ::= { rdkbRgDot11WepTable 1 }
+
+RdkbRgDot11WepEntry ::= 
+    SEQUENCE {
+        rdkbRgDot11WepDefaultKey      INTEGER,
+        rdkbRgDot11WepEncryptionMode  INTEGER,
+        rdkbRgDot11WepPassPhrase      OCTET STRING
+    }
+
+rdkbRgDot11WepDefaultKey OBJECT-TYPE
+    SYNTAX      INTEGER (1..4)
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Controls and reflects the default key which will be used when 64 or
+         128 bit encryption is enabled.  Indicates the entry from the
+         rdkbRgDot1164BitKeyTable if rdkbRgDot11EncryptionMode is set to wep64(1), or
+         the entry from the rdkbRgDot11128BitKeyTable if rdkbRgDot11EncryptionMode is set 
+         to wep128(2).
+         The value for primary BSS is stored in non-vol and is 1 after factory reset.
+         The default value for other BSSs is 1."
+    ::= { rdkbRgDot11WepEntry 1 }
+
+rdkbRgDot11WepEncryptionMode OBJECT-TYPE
+    SYNTAX INTEGER {
+        wep64(0),
+        wep128(1)
+        }
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+         "The value for primary BSS is stored in non-vol and is wep128(1)
+          after factory reset.
+          The default value for other BSSs is wep128."
+    ::= { rdkbRgDot11WepEntry 2 }
+
+rdkbRgDot11WepPassPhrase OBJECT-TYPE
+    SYNTAX      DisplayString (SIZE(0..32))
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Controls and reflects the WEP pass phrase.
+         The value for primary BSS is stored in non-vol and is null
+         after factory reset.
+         The default value for other BSSs is null.
+         This object return an empty string when read."
+    ::= { rdkbRgDot11WepEntry 3 }
+
+
+
+-- WEP 64-bit keys:
+
+rdkbRgDot11Wep64BitKeyTable  OBJECT-TYPE
+    SYNTAX      SEQUENCE OF RdkbRgDot11Wep64BitKeyEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "A table of 40 bit key values used when rdkbRgDot11WepEncryptionMode
+         is set to wep64(0)."
+    ::= { rdkbRgDot11Privacy 4 }
+
+rdkbRgDot11Wep64BitKeyEntry OBJECT-TYPE
+    SYNTAX      RdkbRgDot11Wep64BitKeyEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "A row in the table which represents a single 64 bit key."
+    INDEX   { ifIndex, rdkbRgDot11Wep64BitKeyIndex }
+    ::= { rdkbRgDot11Wep64BitKeyTable 1 }
+
+RdkbRgDot11Wep64BitKeyEntry ::= 
+    SEQUENCE    {
+                rdkbRgDot11Wep64BitKeyIndex       Integer32,
+                rdkbRgDot11Wep64BitKeyValue       OCTET STRING
+    }
+
+rdkbRgDot11Wep64BitKeyIndex OBJECT-TYPE
+    SYNTAX      Integer32 (1..4)
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "Identifies the instance of this table row."
+    ::= { rdkbRgDot11Wep64BitKeyEntry 1 }
+
+rdkbRgDot11Wep64BitKeyValue OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE(5))
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "A 40 bit key to be used when rdkbRgDot11WepEncryptionMode is set to wep64(1).
+         The value for primary BSS is stored in non-vol and is all 1's after factory
+         reset.
+         The default value for other BSSs is all 0's.
+         This object return an empty string when read."
+    ::= { rdkbRgDot11Wep64BitKeyEntry 2 }
+
+-- WEP 128-bit keys:
+
+rdkbRgDot11Wep128BitKeyTable  OBJECT-TYPE
+    SYNTAX      SEQUENCE OF RdkbRgDot11Wep128BitKeyEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "A table of 104 bit key values used when rdkbRgDot11WepEncryptionMode
+         is set to wep128(1)."
+    ::= { rdkbRgDot11Privacy 5 }
+    
+rdkbRgDot11Wep128BitKeyEntry OBJECT-TYPE
+    SYNTAX      RdkbRgDot11Wep128BitKeyEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "A row in the table which represents a single 128 bit key."
+    INDEX   { ifIndex, rdkbRgDot11Wep128BitKeyIndex }
+    ::= { rdkbRgDot11Wep128BitKeyTable 1 }
+    
+RdkbRgDot11Wep128BitKeyEntry ::= 
+    SEQUENCE    {
+                rdkbRgDot11Wep128BitKeyIndex       Integer32,
+                rdkbRgDot11Wep128BitKeyValue       OCTET STRING
+    }
+    
+rdkbRgDot11Wep128BitKeyIndex OBJECT-TYPE
+    SYNTAX      Integer32 (1..4)
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "Identifies the instance of this table row."
+    ::= { rdkbRgDot11Wep128BitKeyEntry 1 }
+
+rdkbRgDot11Wep128BitKeyValue OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE(13))
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "A 104 bit key to be used when rdkbRgDot11WepEncryptionMode is set to wep128(2).
+         The value for primary BSS is stored in non-vol and is all 1's.
+         The default value for other BSSs is all 0's.
+         This object return an empty string when read."
+    ::= { rdkbRgDot11Wep128BitKeyEntry 2 }
+
+
+rdkbRgDot11PrivacyWps OBJECT IDENTIFIER ::= { rdkbRgDot11Privacy 6 }
+
+rdkbRgDot11PrivacyWpsPushButtonTime OBJECT-TYPE
+    SYNTAX      INTEGER (0..10)
+    UNITS       "seconds"
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Specifies how long to press WPS button to start the WPS
+         procedure. 0 means disable WPS.
+         Stored in non-vol, 1 after factory reset."
+    ::= { rdkbRgDot11PrivacyWps 1 }
+
+
+-- Removed node rdkbRgDot11 4 ,5 
+
+
+----------------------------------------------------------------------
+---  rdkbRgDot11ExtMgmt
+---  Table to support Multiple Radios
+---  Note: Indexes may be set to support specific hardware interfaces.
+-----------------------------------------------------------------------
+
+rdkbRgDot11ExtMgmt OBJECT IDENTIFIER ::= { rdkbRgDot11 6 }
+
+rdkbRgDot11ExtMgmtTable  OBJECT-TYPE
+    SYNTAX      SEQUENCE OF RdkbRgDot11ExtMgmtEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "Multiple Radio Configuration Table"
+    ::= { rdkbRgDot11ExtMgmt 1 }
+
+rdkbRgDot11ExtMgmtEntry OBJECT-TYPE
+    SYNTAX      RdkbRgDot11ExtMgmtEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "A row in the table which represents parameters for a Radio.
+                 Index 32 should be set for Radio 0 -- 2.4 GHz if populated.
+                 Index 112 should be set for Radio 1"
+
+    INDEX   { ifIndex }
+    ::= { rdkbRgDot11ExtMgmtTable 1 }
+
+RdkbRgDot11ExtMgmtEntry ::=
+    SEQUENCE {
+                rdkbRgDot11ExtOperMode                INTEGER,
+                rdkbRgDot11ExtCurrentChannel          Unsigned32,
+                rdkbRgDot11ExtBeaconInterval          Unsigned32,
+                rdkbRgDot11ExtDTIMInterval            Unsigned32,
+                rdkbRgDot11ExtFragThresh              Unsigned32,
+                rdkbRgDot11ExtRTSThresh               Unsigned32,
+                rdkbRgDot11ExtSRL                     Unsigned32,
+                rdkbRgDot11ExtLRL                     Unsigned32,
+                rdkbRgDot11ExtCtsProtectionEnable     TruthValue,
+                rdkbRgDot11ExtRate                    INTEGER,
+                rdkbRgDot11ExtOutputPower             INTEGER,
+                rdkbRgDot11ExtCountry                 INTEGER,
+                rdkbRgDot11ExtAntenna                 INTEGER,
+                rdkbRgDot11ExtMbssUserControl         INTEGER,
+                rdkbRgDot11ExtMbssUseNonvol           TruthValue,
+                rdkbRgDot11ExtMbssAdminControl        INTEGER,
+                rdkbRgDot11ExtActualChannel           INTEGER,
+                rdkbRgDot11ExtOnOffPushButtonTime     INTEGER,
+                rdkbRgDot11ExtWmm                     INTEGER,
+                rdkbRgDot11ExtWmmNoAck                INTEGER,
+                rdkbRgDot11ExtMulticastRate           INTEGER,
+                rdkbRgDot11ExtWirelessButtonOperation INTEGER,
+                rdkbRgDot11ExtRadioResetCount         INTEGER
+        }
+
+rdkbRgDot11ExtOperMode OBJECT-TYPE
+    SYNTAX      INTEGER {
+                notAvailable(0),
+                off(1),
+                remote(2),
+                local(3)
+    }
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Used to control the 802.11 operational mode. If set to
+         notAvailable(0), then the wireless interface will be disabled, with
+         the radio off, and no wireless settings web pages will be available to
+         the user.
+         If set to off(1) then the wireless interface will be disabled, but
+         there may be a web page present which indicates that wireless service
+         is available and that the MSO should be contacted to enable it.
+         If set to remote(2), then the wireless interface will be enabled, but
+         the configuration web pages are read-only so that the user may not
+         change the settings.
+         If set to local(3), then the wireless interface will be enabled, and
+         the web pages will be read-write so that the user has full control over
+         the settings.
+         This parameter is stored in non-vol and set to local(3) after factory
+         reset."
+    ::= { rdkbRgDot11ExtMgmtEntry 1 }
+
+rdkbRgDot11ExtCurrentChannel OBJECT-TYPE
+    SYNTAX      Unsigned32 (0..216)
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Controls and reflects the current channel number.
+         The value of 0 means auto channel selection.
+         This parameter is stored in non-vol and is 0
+         after factory reset.
+
+         For 802.11b/g/n modes in 2.4 GHz, the available channels are 1-14.
+         For 802.11a/n modes in 5 GHz, the available channels are 34-216.
+         Channel selection is subjected to restrictions based on Wifi
+         Country Code"
+    ::= { rdkbRgDot11ExtMgmtEntry 3 }
+
+rdkbRgDot11ExtBeaconInterval OBJECT-TYPE
+    SYNTAX      Unsigned32  (1..65535)
+    UNITS       "milliseconds"
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Controls and reflects the beacon interval for the device.
+         This parameter is stored in non-vol."
+    ::= { rdkbRgDot11ExtMgmtEntry 4 }
+
+rdkbRgDot11ExtDTIMInterval OBJECT-TYPE
+    SYNTAX      Unsigned32  (1..255)
+    UNITS       "milliseconds"
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Controls and reflects the DTIM interval for the device.
+         This parameter is stored in non-vol."
+    ::= { rdkbRgDot11ExtMgmtEntry 5 }
+
+-- Renamed from rdkbRgDot11FragmentationThreshold to avoid conflict w/ IEEE 802.11 MIB
+rdkbRgDot11ExtFragThresh OBJECT-TYPE
+    SYNTAX      Unsigned32  (256..2346)
+    UNITS       "bytes"
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Controls and reflects the fragmentation threshold for the device.
+         This parameter is stored in non-vol."
+    ::= { rdkbRgDot11ExtMgmtEntry 6 }
+
+-- Renamed from rdkbRgDot11RTSThreshold to avoid conflict w/ IEEE 802.11 MIB
+rdkbRgDot11ExtRTSThresh OBJECT-TYPE
+    SYNTAX      Unsigned32  (0..2347)
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Controls and reflects the RTS threshold for the device.
+         This parameter is stored in non-vol."
+    ::= { rdkbRgDot11ExtMgmtEntry 7 }
+
+
+-- Renamed from rdkbRgDot11ShortRetryLimit to avoid conflict w/ IEEE 802.11 MIB
+rdkbRgDot11ExtSRL OBJECT-TYPE
+    SYNTAX      Unsigned32  (1..255)
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Controls and reflects the short retry limit for the device.
+         This parameter is stored in non-vol."
+    ::= { rdkbRgDot11ExtMgmtEntry 8 }
+
+-- Renamed from rdkbRgDot11LongRetryLimit to avoid conflict w/ IEEE 802.11 MIB
+rdkbRgDot11ExtLRL OBJECT-TYPE
+    SYNTAX      Unsigned32  (1..255)
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Controls and reflects the long retry limit for the device.
+         This parameter is stored in non-vol."
+    ::= { rdkbRgDot11ExtMgmtEntry 9 }
+
+rdkbRgDot11ExtCtsProtectionEnable OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Controls and reflects the state of CTS protection.
+         If set to true(1), the AP will use RTS/CTS to improve 802.11
+         performance in mixed 802.11 networks. Set to false(2) to
+         maximize 802.11 throughput under most conditions.
+         This parameter is stored in non-vol."
+    ::= { rdkbRgDot11ExtMgmtEntry 10 }
+
+rdkbRgDot11ExtRate OBJECT-TYPE
+    SYNTAX      INTEGER {
+                auto(0),
+                mbits1(1),
+                mbits2(2),
+                mbits5-5(5),
+                mbits6(6),
+                mbits9(9),
+                mbits11(11),
+                mbits12(12),
+                mbits18(18),
+                mbits24(24),
+                mbits36(36),
+                mbits48(48),
+                mbits54(54)
+    }
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Forces the transmission rate for the AP to a particular speed.
+         Note that the 802.11b rates, including mbits1(1), mbits2(2),
+         mbits5-5(5), and mbits11(11), are not available in 5GHz.
+         This parameter is stored in non-vol."
+    ::= { rdkbRgDot11ExtMgmtEntry 11 }
+
+rdkbRgDot11ExtOutputPower OBJECT-TYPE
+    SYNTAX      INTEGER {
+                percent25(25),
+                percent50(50),
+                percent75(75),
+                percent100(100)
+    }
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Sets the output power relative to the hardware's maximum capability.
+         This parameter is stored in non-vol."
+    ::= { rdkbRgDot11ExtMgmtEntry 12 }
+
+rdkbRgDot11ExtCountry OBJECT-TYPE
+    SYNTAX      INTEGER {
+                worldWide(0),
+                thailand(1),
+                israel(2),
+                jordan(3),
+                china(4),
+                japan(5),
+                usa(6),
+                europe(7),
+                allChannels(8)
+    }
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Restricts the channel set based on country requirements.
+         This parameter is stored in non-vol and is worldWide(0)
+         (channels 1-11) after factory reset."
+    ::= { rdkbRgDot11ExtMgmtEntry 13 }
+
+rdkbRgDot11ExtAntenna OBJECT-TYPE
+    SYNTAX  INTEGER {
+        disableIntTx(0),
+        enableIntTx(1)
+        }
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "This parameter is stored in non-vol and set to
+         disableIntTx(0) after factory reset."
+    ::= { rdkbRgDot11ExtMgmtEntry 14 }
+
+rdkbRgDot11ExtMbssUserControl OBJECT-TYPE
+    SYNTAX INTEGER (1..8|65536..16711680)
+    MAX-ACCESS read-write
+    STATUS current
+    DESCRIPTION
+        "Sets the number of user controlled Wifi networks via web pages.
+         1: The user has control over the primary wireless network only.
+            No guest network page is displayed.
+         2: The user has control over the primary wireless network and
+            one guest network. No drop down menu (or only 1 item in the
+            menu) for additional guest network configuration.
+         3: Same as above with 2 guest networks.
+         4: Same as above with 3 guest networks.
+         5: Same as above with 4 guest networks.
+             6: Same as above with 5 guest networks.
+             7: Same as above with 6 guest networks.
+         8: Same as above with 7 guest networks.
+
+         Bit Mask Control:
+         Bit 16: -- User has control over Primary Wireless Network       :  65536
+         Bit 17: -- User has control over Guest Network 1 (interface 33) : 131072
+         Bit 18: -- User has control over Guest Network 2 (interface 34) : 262144
+         Bit 19: -- User has control over Guest Network 3 (interface 35) : 524288
+         Bit 20: -- User has control over Guest Network 4 (interface 36) :1048576
+         Bit 21: -- User has control over Guest Network 5 (interface 37) :2097152
+         Bit 22: -- User has control over Guest Network 6 (interface 38) :4194304
+         Bit 23: -- User has control over Guest Network 7 (interface 39) :8388608
+
+         This object value is stored in non-vol and set to 1
+         after factory reset."
+    ::= { rdkbRgDot11ExtMgmtEntry 15 }
+
+rdkbRgDot11ExtMbssUseNonvol OBJECT-TYPE
+    SYNTAX TruthValue
+    MAX-ACCESS read-write
+    STATUS current
+    DESCRIPTION
+        "Allows to save additional BSS parameters to non-vol if set to true.
+         Primary BSS parameters are ALWAYS stored in non-vol.
+         This object value is stored in non-vol and set to false
+         after factory reset."
+    ::= { rdkbRgDot11ExtMgmtEntry 16 }
+
+rdkbRgDot11ExtMbssAdminControl OBJECT-TYPE
+    SYNTAX INTEGER (1..8|65536..16711680)
+    MAX-ACCESS read-write
+    STATUS current
+    DESCRIPTION
+        "Sets the number of admin controlled Wifi networks via web pages.
+         1: The admin has control over the primary wireless network only.
+            No guest network page is displayed.
+         2: The admin has control over the primary wireless network and
+            one guest network. No drop down menu (or only 1 item in the
+            menu) for additional guest network configuration.
+         3: Same as above with 2 guest networks.
+         4: Same as above with 3 guest networks.
+         5: Same as above with 4 guest networks.
+             6: Same as above with 5 guest networks.
+             7: Same as above with 6 guest networks.
+         8: Same as above with 7 guest networks.
+
+         Bit 16: -- Admin Has control over Primary Wireless Network       :  65536
+         Bit 17: -- Admin Has control over Guest Network 1 (interface 33) : 131072
+         Bit 18: -- Admin Has control over Guest Network 2 (interface 34) : 262144
+         Bit 19: -- Admin Has control over Guest Network 3 (interface 35) : 524288
+         Bit 20: -- Admin Has control over Guest Network 4 (interface 36) :1048576
+         Bit 21: -- Admin Has control over Guest Network 5 (interface 37) :2097152
+         Bit 22: -- Admin Has control over Guest Network 6 (interface 38) :4194304
+         Bit 23: -- Admin Has control over Guest Network 7 (interface 39) :8388608
+
+         This object value is stored in non-vol and set to 1
+         after factory reset."
+
+    ::= { rdkbRgDot11ExtMgmtEntry 17 }
+
+rdkbRgDot11ExtActualChannel OBJECT-TYPE
+    SYNTAX      INTEGER
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Reports the current channel number that wireless is on.
+         The value of 0 means wireless is disabled."
+    ::= { rdkbRgDot11ExtMgmtEntry 18 }
+
+rdkbRgDot11ExtOnOffPushButtonTime OBJECT-TYPE
+    SYNTAX      INTEGER (0..11)
+    UNITS       "seconds"
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Specifies how long to press WPS button to enable or disable
+         the WiFi interface (primary SSID). When set to 11, the feature
+         is disabled.
+         Note that if the device has multiple radios but a single WPS HW button,
+         only the first instance (rdkbRgDot11ExtOnOffPushButtonTime.32) should be used.
+         Stored in non-vol, 5, 10 after factory reset."
+    ::= { rdkbRgDot11ExtMgmtEntry 19 }
+
+rdkbRgDot11ExtWmm OBJECT-TYPE
+    SYNTAX  INTEGER {
+        disable(0),
+        enable(1)
+        }
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Mib to Enable/Disable Wifi-Multi Media (WMM) QOS fetures.
+        This parameter is stored in non-vol and set to
+        enable(1) after a factory reset."
+    DEFVAL { 1 }
+    ::= { rdkbRgDot11ExtMgmtEntry 20 }
+
+ rdkbRgDot11ExtWmmNoAck OBJECT-TYPE
+    SYNTAX  INTEGER {
+        disable(0),
+        enable(1)
+        }
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Mib to control whether Wifi packets require acknowledgement.
+        disable(0) Use acknowledgemnet for Wifi packets.
+        enable(1)  Sets No acknowledgement which allows for higher throughput and lower latency when some
+                   packetloss is acceptable (ex. VoIP).
+        Note: If WMM is disabled then this setting has no effect, and you can Not disable Acks from being
+        returned from the stations.
+        This parameter is stored in non-vol and set to disable(0) after a factory reset."
+    DEFVAL { 0 }
+    ::= { rdkbRgDot11ExtMgmtEntry 21 }
+
+ rdkbRgDot11ExtMulticastRate OBJECT-TYPE
+    SYNTAX      INTEGER {
+                                disable(0),
+                mbits1(1),
+                mbits2(2),
+                mbits5-5(5),
+                mbits6(6),
+                mbits9(9),
+                mbits11(11),
+                mbits12(12),
+                mbits18(18),
+                mbits24(24),
+                mbits36(36),
+                mbits48(48),
+                mbits54(54)
+        }
+    UNITS       "Mbps"
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Forces the dot11 multicast Phy transmission rate.
+         Note that the 802.11b rates, including mbits1(1), mbits2(2),
+         mbits5-5(5), and mbits11(11), are not available in 5GHz.
+         This object is stored in non-vol and defaults to disable(0) after factory reset."
+    DEFVAL { 0 }
+    ::= { rdkbRgDot11ExtMgmtEntry 22 }
+
+rdkbRgDot11ExtWirelessButtonOperation OBJECT-TYPE
+    SYNTAX  INTEGER {
+        disable(0),
+        enable(1)
+    }
+    MAX-ACCESS    read-write
+    STATUS        current
+    DESCRIPTION
+        "To enable or disable the button press of wireless ON/OFF button.
+         This feature will work only on products that have the wireless ON/OFF button.
+         This MIB will control if the Wireless ON/OFF button can be pressed or not.
+         If it's enabled then button press would take effect otherwise there will not be any effect on button press.
+         Note that if the device has multiple radios but a single Wireless ON/OFF button,
+         only the first instance (rdkbRgDot11ExtWirelessButtonOperation.32) should be used.
+         By default value will be set to enable(1)."
+    DEFVAL { 1 }
+    ::= { rdkbRgDot11ExtMgmtEntry 23 }
+    
+ rdkbRgDot11ExtRadioResetCount OBJECT-TYPE
+    SYNTAX      INTEGER
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Radio reset count."
+    ::= { rdkbRgDot11ExtMgmtEntry 24 }   
+
+
+---------------------------------------
+-- Dot11nExt - Radio Settings Table
+---  Table to support Multiple 802.11n Radios
+---  Note: Indexes may be set to support specific hardware interfaces.
+---  Index 32 MUST match rdkbRgDot11n.
+---------------------------------------
+
+rdkbRgDot11nExt OBJECT IDENTIFIER ::= { rdkbRgDot11 7 }
+
+rdkbRgDot11nExtTable  OBJECT-TYPE
+    SYNTAX      SEQUENCE OF RdkbRgDot11nExtEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "Multiple 802.11n Radio Configuration Table
+                 Index 32 should be set for Radio 0 -- 2.4 GHz if populated.
+                 Index 112 should be set for Radio 1"
+    ::= { rdkbRgDot11nExt 1 }
+
+rdkbRgDot11nExtEntry OBJECT-TYPE
+    SYNTAX      RdkbRgDot11nExtEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "A row in the table which represents parameters for an 802.11n Radio."
+    INDEX   { ifIndex }
+    ::= { rdkbRgDot11nExtTable 1 }
+
+RdkbRgDot11nExtEntry ::=
+    SEQUENCE {
+                rdkbRgdot11nExtMode               INTEGER,
+                rdkbRgdot11nExtPhyRate            INTEGER,
+                rdkbRgdot11nExtBand               INTEGER,
+                rdkbRgdot11nExtBandWidth          INTEGER,
+                rdkbRgdot11nExtSideBand           INTEGER,
+                rdkbRgdot11nExtObssCoex           INTEGER,
+                rdkbRgdot11nExtMulticastRate      INTEGER
+        }
+
+rdkbRgdot11nExtMode OBJECT-TYPE
+    SYNTAX INTEGER {
+        auto(1),
+        off(2),
+        n-only(3),
+        b-mode(16),
+        g-mode(32),
+        bg-mode(48),
+        a-mode(64),
+        --n-only(128),
+        gn-mode(160),
+        bgn-mode(176),
+        an-mode(192),
+        ac-only(256),
+        nac-only(384),
+        anac-mode(448)
+        }
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Determines which 802.11 mode the radio will run in.
+         This object must be set by either the legacy or bitmask method.
+
+         In legacy method,
+         auto(1)  : supports all the 802.11 modes available in the radio.
+         off(2)   : supports the legacy mode only (11b/g in 2.4GHz and 11a in 5GHz).
+         n-only(3): accepts 11n-capable clients only but supports all the modes available in the radio.
+
+         In bitmask method,
+         b-mode(16)    : supports 11b mode in 2.4GHz.
+         g-mode(32)    : supports 11g mode in 2.4GHz.
+         bg-mode(48)   : supports 11b/g mode in 2.4GHz (16+32).
+         a-mode(64)    : supports 11a mode in 5GHz.
+         n-only(128)   : accepts 11n-capable clients only but supports both legacy and 11n modes in 2.4GHz or 5GHz.
+         gn-mode(160)  : supports 11g/n mode in 2.4GHz (32+128).
+         bgn-mode(176) : supports all 11b/g/n modes in 2.4GHz (16+32+128).
+         an-mode(192)  : supports 11a/n modes in 5GHz (64+128).
+         ac-only(256)  : accepts 11ac-capable clients only but supports 11a/n/ac modes in 5GHz.
+         nac-only(384) : accepts 11n-capable clients only but supports 11a/n/ac modes in 5GHz (128+256).
+         anac-mode(448): supports all 11a/n/ac modes in 5GHz (64+128+256).
+
+         Note: Some options may not be available depending on the radio model.
+         Note: The change of this object value will also affect other MIB selections, including rdkbRgdot11nExtBandWidth.
+         This object is stored in non-vol and defaults to auto(1) after factory reset."
+     ::= { rdkbRgDot11nExtEntry 1 }
+
+rdkbRgdot11nExtPhyRate OBJECT-TYPE
+    SYNTAX INTEGER {
+        auto(0),
+        legacy(1),
+        mbits6-5or13-5(2),
+        mbits13or27(3),
+        mbits19-5or40-5(4),
+        mbits26or54(5),
+        mbits39or81(6),
+        mbits52or108(7),
+        mbits58-5or121-5(8),
+        mbits65or135(9),
+        reserved1(10),
+        reserved2(11),
+        reserved3(12),
+        reserved4(13),
+        mbits78or162(14),
+        mbits104or216(15),
+        mbits117or243(16),
+        mbits130or270(17)
+        }
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Forces the N Phy transmission rate for the AP to a particular speed.  Each pair of rates
+         corresponds to a 20 MHz or 40 MHz channel configuration.
+         This object is stored in non-vol and defaults to auto(0) after factory reset.
+
+         This MIB is being degraded, since it is better for higher band width devices to run in 'auto' mode"
+    DEFVAL { auto }
+    ::= { rdkbRgDot11nExtEntry 2 }
+
+
+rdkbRgdot11nExtBand OBJECT-TYPE
+    SYNTAX INTEGER {
+        band-2-4G(1),
+        band-5G(2)
+        }
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Determines which Band that we will be operating in. Either the 2.4G or the 5G Hz.
+         Note: This is for N cards only.
+         This object is stored in non-vol and defaults to band-2-4G(1) after factory reset."
+    ::= { rdkbRgDot11nExtEntry 3 }
+
+rdkbRgdot11nExtBandWidth OBJECT-TYPE
+    SYNTAX INTEGER {
+        width-20MHz(1),
+        width-40MHz(2),
+        width-80MHz(3)
+        }
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Determines which Band Width that we will be operating in. Either the 20MHz or the 40MHz.
+         Note: This is for N cards only, and this also affect other MIB selections such as rdkbRgdot11nSideBand.
+         The 80 MHz channel width is only applicable for 802.11ac capable cards. If a user sets this to 80 MHz, SNMPset would fail for non-802.11ac cards
+         This object is stored in non-vol and defaults to ? after factory reset."
+    ::= { rdkbRgDot11nExtEntry 4 }
+
+rdkbRgdot11nExtSideBand OBJECT-TYPE
+    SYNTAX INTEGER {
+        upper(1),
+        lower(2)
+        }
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Determines which side Band the channel will operate in.
+         Note: This is for N cards only, this mib is dependent of what rdkbRgdot11nBandWidth is selected and only
+         applies when 40MHz is selected.
+         This object is stored in non-vol and defaults to lower(2) after factory reset."
+    ::= { rdkbRgDot11nExtEntry 5 }
+
+rdkbRgdot11nExtObssCoex OBJECT-TYPE
+        SYNTAX INTEGER {
+                disable(0),
+                enable(1)
+                }
+        MAX-ACCESS read-write
+        STATUS     current
+        DESCRIPTION
+                "Allows MSO to control OBSS (Overlapping BSS) Coexistance parameter for 802.11n 40MHz channel width.
+                 By default it is enabled and is stored in non-vol
+                 Factory reset would clear it and would be enable(1) after factory reset.
+                 When disabled, the 802.11n Wifi would stay in 40 MHz channel-width inspite of interference from other
+                 wifi channels. While enabled, 802.11n would coexist with 802.11g channels using 20 MHz default channel-width
+                 "
+        ::= { rdkbRgDot11nExtEntry 6 }
+
+rdkbRgdot11nExtMulticastRate OBJECT-TYPE
+    SYNTAX INTEGER {
+        disable(0),
+        legacy(1),
+        mbits6-5or13-5(2),
+        mbits13or27(3),
+        mbits19-5or40-5(4),
+        mbits26or54(5),
+        mbits39or81(6),
+        mbits52or108(7),
+        mbits58-5or121-5(8),
+        mbits65or135(9),
+        reserved1(10),
+        reserved2(11),
+        reserved3(12),
+        reserved4(13),
+        mbits78or162(14),
+        mbits104or216(15),
+        mbits117or243(16),
+        mbits130or270(17)
+        }
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Forces the dot11n Multicast Phy transmission rate.  Legacy mode forces the rate to be set
+                 by dot11MulticastRate.
+         This object is stored in non-vol and defaults to disable(0) after factory reset."
+    DEFVAL { 0 }
+    ::= { rdkbRgDot11nExtEntry 7 }
+
+rdkbRgDot11BandSteering OBJECT IDENTIFIER ::= { rdkbRgDot11 8}
+
+rdkbRgDot11BandSteeringCapability OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Returns whether the device is capable of WiFi Band Steering functionality."
+   ::= { rdkbRgDot11BandSteering 1 }
+   
+   rdkbRgDot11BandSteeringEnable OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Enabled - true , Disabled-false."
+   ::= { rdkbRgDot11BandSteering 2 }
+   
+      rdkbRgDot11BandSteeringHistory OBJECT-TYPE
+    SYNTAX      SnmpAdminString
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Returnd steering history"
+   ::= { rdkbRgDot11BandSteering 3 }
+   
+   rdkbRgDot11BandSteeringBSTable  OBJECT-TYPE
+    SYNTAX      SEQUENCE OF RdkbRgDot11BandSteeringBSEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "Multiple 802.11n Radio Configuration Table
+                 Index 10001 should be set for Radio 0 -- 2.4 GHz if populated.
+                 Index 10101 should be set for Radio 1"
+    ::= { rdkbRgDot11BandSteering 4 }
+    
+RdkbRgDot11BandSteeringBSEntry OBJECT-TYPE
+    SYNTAX  	RdkbRgDot11BandSteeringBSEntry    
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "A row in the table which represents parameters for an 802.11nRadio."
+    INDEX   { ifIndex }
+    ::= { rdkbRgDot11BandSteeringBSTable 1 }
+    
+rdkbRgDot11BandSteeringBSEntry ::= 
+    SEQUENCE {
+        rdkbRgDot11BandSteeringBSUtilizationThreshold     INTEGER,
+        rdkbRgDot11BandSteeringBSRSSIThreshold   INTEGER,
+        rdkbRgDot11BandSteeringBSPhyRateThreshold  INTEGER
+        }
+
+rdkbRgDot11BandSteeringBSUtilizationThreshold OBJECT-TYPE
+    SYNTAX      INTEGER
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Band setting utilization threshhold."
+    ::= { rdkbRgDot11BandSteeringBSEntry 1 }
+    
+rdkbRgDot11BandSteeringBSRSSIThreshold OBJECT-TYPE
+SYNTAX      INTEGER
+MAX-ACCESS  read-write
+STATUS      current
+DESCRIPTION
+    "Band setting RSSI threshhold."
+::= { rdkbRgDot11BandSteeringBSEntry 2 }
+
+rdkbRgDot11BandSteeringBSPhyRateThreshold OBJECT-TYPE
+SYNTAX      INTEGER
+MAX-ACCESS  read-write
+STATUS      current
+DESCRIPTION
+    "Band setting PhyRate Threshold."
+::= { rdkbRgDot11BandSteeringBSEntry 3 }
+
+-- rdkbRgDot11ApplySettings: do 'on the fly' config with settings from above.
+-- This scalar object was placed by itself at ieee802rdkbRgDot11Mgmt 100 because
+-- it applies all settings from all current and possibly future 802.11
+-- groups.  Wanted to leave plenty of room to add new groups in the future.
+
+rdkbRgDot11ApplySettings OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "If set to true(1), then all the settings (MIB values)
+         from this MIB tree will be applied to run time configuration,
+         modifying previous RG operation with the new settings.
+         Before setting the value to true, MIBs modified in the MIB
+         tree are stored in non-vol and will not modify RG operation
+         until rdkbRgDot11ApplySettings is set to true or CM resets.
+         Note: this applies only to the MIB objects that are stored
+         in non-vol.
+         Always returns false(2) when read."
+    ::= { rdkbRgDot11 1001 }
+
+
+-- =============
+-- IP management
+-- =============
+
+rdkbRgIpMgmt OBJECT IDENTIFIER ::=  { rdkbRg 3 }
+
+
+-- { rdkbRgIpMgmt 1 } reserved for WAN IP definition (currently only DHCP)
+
+
+-- LAN NETWORK DEFINITIONS
+
+rdkbRgIpMgmtLanTable OBJECT-TYPE
+    SYNTAX SEQUENCE OF RdkbRgIpMgmtLanEntry
+    MAX-ACCESS not-accessible
+    STATUS current
+    DESCRIPTION
+            "Networks on the LAN side.
+             Primary BSS stored in non-vol."
+    ::= { rdkbRgIpMgmt 2 }
+
+rdkbRgIpMgmtLanEntry OBJECT-TYPE
+    SYNTAX      RdkbRgIpMgmtLanEntry
+    MAX-ACCESS  not-accessible
+    STATUS     current
+    DESCRIPTION
+            "List of networks on the LAN side."
+    INDEX { ifIndex }
+    ::= { rdkbRgIpMgmtLanTable 1 }
+
+RdkbRgIpMgmtLanEntry ::= SEQUENCE {
+    rdkbRgIpMgmtLanMode              INTEGER,
+    rdkbRgIpMgmtLanNetwork           IpAddress,
+    rdkbRgIpMgmtLanNetworksAllow     INTEGER,
+    rdkbRgIpMgmtLanSubnetMask        IpAddress,
+    rdkbRgIpMgmtLanGateway           IpAddress,
+    rdkbRgIpMgmtLanDhcpServer        INTEGER,
+    rdkbRgIpMgmtLanTypeOfService     INTEGER,
+    rdkbRgIpMgmtLanDhcp125Option     INTEGER,
+    rdkbRgIpMgmtLanHnap                  INTEGER,
+    rdkbRgIpMgmtLanUpnp                          INTEGER
+    }
+
+rdkbRgIpMgmtLanMode OBJECT-TYPE
+    SYNTAX INTEGER {
+        bridge(1),
+        router(2),
+        l2tpv2-client(3),
+        mixed(4),
+        vlan(5)
+        }
+    MAX-ACCESS    read-write
+    STATUS        current
+    DESCRIPTION
+        "Defines the mode of operation for the device.
+        Setting this object via SNMP for the primary BSS will cause
+        the unit to reboot.
+        Setting this object via SNMP for the secondary BSSs will not
+        cause the unit to reboot.
+        The value for primary BSS is stored in non-vol and is router
+        after factory reset.
+        The default value for other BSSs is router.
+                This MIB supersedes rdkbRgDeviceMode for the .32 interface.
+        l2tpv2-client(3)is obsoleted and NOT supported.
+
+                bridge(1):      Sets individual interface to bridging mode
+                                        (for IPv6 interfaces DHCPv6 is external)
+                router(2):      Sets individual interface to routing mode
+                                        (for IPv6 interfaces DHCPv6 is internal)
+                l2tpv2-client(3): <obsolete>
+                mixed(4):       For mixed mode. This setting is applicable only to
+                                        .32 interface. This value is used on conjunction with
+                                        rdkbRgIpMgmtLanPortControlTable
+                                        *Note: mixed(4) mode NOT Supported by DOCSIS 2.0 products.
+                vlan (5):       Enables the vlan control feature.
+                                        See rdkbRgVlanTable MIBs for VLAN configuration information."
+    DEFVAL { 2 }
+    ::= { rdkbRgIpMgmtLanEntry 1 }
+
+rdkbRgIpMgmtLanNetwork OBJECT-TYPE
+    SYNTAX      IpAddress
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+            "The LAN-Trans network number.
+            Default for primary BSS is 192.168.0.0
+            Default for other BSSs is 192.168.ifIndex.0"
+    ::= { rdkbRgIpMgmtLanEntry 3 }
+
+
+rdkbRgIpMgmtLanNetworksAllow OBJECT-TYPE
+                SYNTAX  INTEGER {
+                default(0),
+                anyPrivateClass(1),
+                anyClass(2)
+        }
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+                "Allows the user via the internal Web GUI (Lan Setup page
+                to input an IPv4 public or private Local IP address other than a
+                class C Private address (the default Network for the Primary BSS = 192.168.0.0/24, with
+                the default Local Ip address = 192.168.0.1.)
+                In all cases the mask must be 255.255.255.x since the RG is limited to supporting
+                a maximum of 253 IP addresses.
+                (See RFC1918 for a description of private IP addresses and specified ranges.)
+                Available Mib settings:
+                default(0):                     Only the third and fourth octets are editable in
+                                                        the Web GUI for the Local IP address (Ex. 192.168.x.x/24).
+                anyPrivateClass(1):     All 4 octets are editable in the Web GUI for Local IP address, but
+                                                        the network specified must be a Private class A, B or C network address.
+                                                        (Ex. A=10.x.x.x, B=172.16.x.x, C=192.168.x.x).
+                anyClass(2):            All 4 octets are editable in the Web GUI for Local IP address, and
+                                                        the network specified could be any public or private class A, B, or C address.
+
+                If the MSO specifically sets a Local IP address in rdkbRgIpMgmtLanNetwork to a value other than
+                the default value (for example: 192.168.0.1) then these fields will be uneditable by the user (grayed out)."
+        DEFVAL { 0 }
+        ::= { rdkbRgIpMgmtLanEntry 4 }
+
+rdkbRgIpMgmtLanSubnetMask OBJECT-TYPE
+    SYNTAX      IpAddress
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+            "The device MUST provide the value of this MIB
+            object in the Option 1 (Subnet Mask) of
+            DHCP OFFER and ACK messages sent to a LAN IP Device."
+    DEFVAL { 'ffffff00'h }    -- 255.255.255.0
+    ::= { rdkbRgIpMgmtLanEntry 5 }
+
+rdkbRgIpMgmtLanGateway OBJECT-TYPE
+    SYNTAX      IpAddress
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+                "The type of this address is specified by
+            rdkbRgIpMgmtLanNetwokRouterType. The PS MUST
+            provide the value of this MIB object in the
+            Option 3 (Router IP address) of the DHCP
+            OFFER and ACK messages sent to the LAN IP Device.
+            Default for primary BSS is 192.168.0.1
+            Default for other BSSs is 192.168.ifIndex.1"
+    ::= { rdkbRgIpMgmtLanEntry 7 }
+
+rdkbRgIpMgmtLanDhcpServer OBJECT-TYPE
+    SYNTAX INTEGER {
+        disable(0),
+        enable(1)
+        }
+    MAX-ACCESS    read-write
+    STATUS        current
+    DESCRIPTION
+        "The value for primary BSS is stored in non-vol.
+         The default value for other BSSs is:
+         Enabled by default if interface is in router mode.
+         Always disabled if interface is in bridge mode."
+    ::= { rdkbRgIpMgmtLanEntry 8 }
+
+rdkbRgIpMgmtLanTypeOfService OBJECT-TYPE
+      SYNTAX      INTEGER
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+          "Definition of the TOS bits for the Network.
+           This object does not apply to primary BSS."
+      DEFVAL { 0 }
+      ::= { rdkbRgIpMgmtLanEntry 10 }
+
+rdkbRgIpMgmtLanDhcp125Option OBJECT-TYPE
+      SYNTAX      INTEGER {
+        disable(0),
+        addSsidName(1)
+        }
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+          "This option controls if the RG adds a customer specific
+           suboption (number 17) to DHCP DISCOVER and REQUEST
+           from the clients that are bridged on the BSS:
+         0: do not add the option
+         1: add suboption 17 to vendor specific enterprise-id
+            (9) within DHCP option 125. The content is the SSID name."
+      DEFVAL { 0 }
+      ::= { rdkbRgIpMgmtLanEntry 11 }
+
+rdkbRgIpMgmtLanHnap OBJECT-TYPE
+    SYNTAX INTEGER {
+        disable(0),
+        enable(1)
+        }
+    MAX-ACCESS    read-write
+    STATUS        current
+    DESCRIPTION
+        "The value for primary BSS is stored in non-vol and
+         is enable after factory default.
+         The default value for other BSSs is disable."
+    ::= { rdkbRgIpMgmtLanEntry 12 }
+
+rdkbRgIpMgmtLanUpnp OBJECT-TYPE
+    SYNTAX INTEGER {
+        disable(0),
+        enable(1)
+        }
+    MAX-ACCESS    read-write
+    STATUS        current
+    DESCRIPTION
+        "Enable/Disable the UPnP agent.
+             The value is stored in non-vol and is disabled after factory default for the primary SSID.
+                     The UPnP agents for additional networks are enabled by default.
+         "
+    DEFVAL { 0 }
+    ::= { rdkbRgIpMgmtLanEntry 13 }
+
+-- LAN DHCP SERVERS DEFINITIONS
+
+rdkbRgIpMgmtLanDhcpServerTable OBJECT-TYPE
+    SYNTAX SEQUENCE OF RdkbRgIpMgmtLanDhcpServerEntry
+    MAX-ACCESS not-accessible
+    STATUS current
+    DESCRIPTION
+            "Networks on the LAN side.
+             Stored in non-vol. .10-.128 for primary BSS
+             after factory reset."
+    ::= { rdkbRgIpMgmt 3 }
+
+rdkbRgIpMgmtLanDhcpServerEntry OBJECT-TYPE
+    SYNTAX      RdkbRgIpMgmtLanDhcpServerEntry
+    MAX-ACCESS  not-accessible
+    STATUS     current
+    DESCRIPTION
+            "List of networks on the LAN side."
+    INDEX { ifIndex }
+    ::= { rdkbRgIpMgmtLanDhcpServerTable 1 }
+
+RdkbRgIpMgmtLanDhcpServerEntry ::= SEQUENCE {
+    rdkbRgIpMgmtLanDhcpServerPoolStart         IpAddress,
+    rdkbRgIpMgmtLanDhcpServerPoolEnd           IpAddress,
+    rdkbRgIpMgmtLanDhcpServerLeaseTime         Unsigned32,
+    rdkbRgIpMgmtLanDhcpServerTimeOffset        Integer32,
+        rdkbRgIpMgmtLanDhcpServerDomainName        SnmpAdminString
+    }
+
+
+rdkbRgIpMgmtLanDhcpServerPoolStart OBJECT-TYPE
+    SYNTAX      IpAddress
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+            "The start of range LAN Trans IP Addresses. The type of
+            this address is specified by rdkbRgIpMgmtLanDhcpServerPoolStartType.
+            Default value depends on IP network and subnet."
+    ::= { rdkbRgIpMgmtLanDhcpServerEntry 2 }
+
+rdkbRgIpMgmtLanDhcpServerPoolEnd OBJECT-TYPE
+    SYNTAX      IpAddress
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+            "The end of range for LAN-Trans IP Addresses. The type of
+            this address is specified by rdkbRgIpMgmtLanDhcpServerPoolEndType.
+            Default value depends on IP network and subnet."
+    ::= { rdkbRgIpMgmtLanDhcpServerEntry 4 }
+
+rdkbRgIpMgmtLanDhcpServerLeaseTime OBJECT-TYPE
+    SYNTAX      Unsigned32
+    UNITS       "seconds"
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+            "The PS MUST provide the value of this MIB object in the
+            Option 51 (IP Address lease time) of the DHCP OFFER and
+            ACK messages sent to the LAN IP Device."
+    DEFVAL { 3600 }
+    ::= { rdkbRgIpMgmtLanDhcpServerEntry 5 }
+
+rdkbRgIpMgmtLanDhcpServerTimeOffset OBJECT-TYPE
+    SYNTAX      Integer32 (-86400..86400) -- 0 to 24 hours (in seconds)
+    UNITS       "seconds"
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+            "The PS MUST provide the value of this MIB object in
+            the Option 2 (Time Offset from Coordinated
+            Universal Time-UTC) in the DHCP OFFER and ACK
+            messages sent to the LAN IP Device."
+    DEFVAL { 0 }    -- UTC
+    ::= { rdkbRgIpMgmtLanDhcpServerEntry 6 }
+
+rdkbRgIpMgmtLanDhcpServerDomainName OBJECT-TYPE
+    SYNTAX      SnmpAdminString
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+            "This is the domain name given to this DHCP server's clients."
+    ::= { rdkbRgIpMgmtLanDhcpServerEntry 7 }
+  
+  
+-- removed node rdkbRgIpMgmt 4
+
+--===================================================================
+--
+-- rdkbRgIpMgmtDnsServerTable (CDP WAN DNS Server Table)
+--
+-- The rdkbRgIpMgmtDnsServerTable is a table of 3 cable network
+-- and Internet DNS Servers.
+--
+--===================================================================
+
+rdkbRgIpMgmtDnsServerTable OBJECT-TYPE
+    SYNTAX SEQUENCE OF RdkbRgIpMgmtDnsServerEntry
+    MAX-ACCESS not-accessible
+    STATUS current
+    DESCRIPTION
+            "This table contains the IP addresses of cable network and
+            Internet DNS servers, in the order of preference in which
+            the PS's CNP will query them, when it cannot resolve a DNS
+            query using local information. Entries in this table are
+            updated with the information contained in DHCP Option 6,
+            received during both the WAN-Man and WAN-Data IP
+            acquisition processes.
+            Stored in non-vol and 0.0.0.0 for all servers after
+            factory reset."
+    ::= { rdkbRgIpMgmt 5 }
+
+rdkbRgIpMgmtDnsServerEntry OBJECT-TYPE
+    SYNTAX      RdkbRgIpMgmtDnsServerEntry
+    MAX-ACCESS  not-accessible
+    STATUS     current
+    DESCRIPTION
+            "List of cable network and Internet DNS servers."
+    INDEX { rdkbRgIpMgmtDnsServerOrder }
+    ::= { rdkbRgIpMgmtDnsServerTable 1 }
+
+RdkbRgIpMgmtDnsServerEntry ::= SEQUENCE {
+    rdkbRgIpMgmtDnsServerOrder  INTEGER,
+    rdkbRgIpMgmtDnsServerIp     IpAddress,
+	rdkbRgIpMgmtDnsServerIpv6   InetAddress
+    }
+
+rdkbRgIpMgmtDnsServerOrder OBJECT-TYPE
+    SYNTAX      INTEGER {
+                    primary(1),
+                    secondary(2),
+                    tertiary(3)
+                }
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "The order of preference for cable network and Internet DNS
+            servers, as listed in DHCP option 6 (Domain Server)."
+    ::= { rdkbRgIpMgmtDnsServerEntry 1 }
+
+rdkbRgIpMgmtDnsServerIp OBJECT-TYPE
+    SYNTAX      IpAddress
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+            "This parameter indicates the IP address of a WAN DNS
+            server."
+    ::= { rdkbRgIpMgmtDnsServerEntry 3 }
+
+rdkbRgIpMgmtDnsServerIpv6 OBJECT-TYPE
+    SYNTAX      InetAddress
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+            "This parameter indicates the IPv6 address of a WAN DNS
+            server."
+    ::= { rdkbRgIpMgmtDnsServerEntry 4 }
+
+-- removed node rdkbRgIpMgmt 6,7,8
+
+
+-- WAN interface
+
+rdkbRgIpMgmtWanAddr OBJECT IDENTIFIER ::= { rdkbRgIpMgmt 9 }
+
+rdkbRgIpMgmtWanAddrBase OBJECT IDENTIFIER ::= { rdkbRgIpMgmtWanAddr 1 }
+
+rdkbRgIpMgmtWanMode OBJECT-TYPE
+    SYNTAX INTEGER {
+        dhcp(1),
+        static(2),
+        dualIp(3)
+        }
+    MAX-ACCESS    read-write
+    STATUS        current
+    DESCRIPTION
+        "When dualIp(3) is selected, the second IP stack is used for
+         user operations.
+         Stored in non-vol, dhcp(1) after factory reset."
+    ::= { rdkbRgIpMgmtWanAddrBase 1 }
+
+rdkbRgIpMgmtWanMtu OBJECT-TYPE
+    SYNTAX INTEGER (0..1500)
+    UNITS       "bytes"
+    MAX-ACCESS     read-write
+    STATUS         current
+    DESCRIPTION
+        "MTU size for the IP layer. Valid range is 256 to 1500.
+         0 is the default which is 1500.
+         Stored in non-vol, 0 after factory reset."
+    ::= { rdkbRgIpMgmtWanAddrBase 2 }
+
+rdkbRgIpMgmtWanTtl OBJECT-TYPE
+    SYNTAX INTEGER (0..255)
+    UNITS       "hops"
+    MAX-ACCESS     read-write
+    STATUS         current
+    DESCRIPTION
+        "TTL for the IP packets forwarded to WAN.
+         0 means no change to the original TTL (after
+         being decreased by 1).
+         Stored in non-vol, 0 after factory reset."
+    ::= { rdkbRgIpMgmtWanAddrBase 3 }
+
+
+rdkbRgIpMgmtWanAddrDynamic OBJECT IDENTIFIER ::= { rdkbRgIpMgmtWanAddr 2 }
+
+rdkbRgIpMgmtWanAddrDynamicIp OBJECT-TYPE
+    SYNTAX      IpAddress
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "The IP address for the DHCP-assigned router address. This is the outside-facing WAN address of the router. Stored in non-vol, 0.0.0.0 after factory reset."
+    ::= { rdkbRgIpMgmtWanAddrDynamic 1 }
+
+rdkbRgIpMgmtWanAddrDynamicLeaseTime OBJECT-TYPE
+    SYNTAX      Unsigned32
+    UNITS       "seconds"
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+            "The lease time for the dynamically assigned WAN address."
+    DEFVAL { 3600 }
+    ::= { rdkbRgIpMgmtWanAddrDynamic 2 }
+
+rdkbRgIpMgmtWanAddrStatic OBJECT IDENTIFIER ::= { rdkbRgIpMgmtWanAddr 3 }
+
+rdkbRgIpMgmtWanStaticNetwork OBJECT-TYPE
+    SYNTAX      IpAddress
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Stored in non-vol, 0.0.0.0 after factory reset."
+    ::= { rdkbRgIpMgmtWanAddrStatic 1 }
+
+rdkbRgIpMgmtWanStaticSubnetMask OBJECT-TYPE
+    SYNTAX      IpAddress
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Stored in non-vol, 0.0.0.0 after factory reset."
+    ::= { rdkbRgIpMgmtWanAddrStatic 2 }
+
+rdkbRgIpMgmtWanStaticGateway OBJECT-TYPE
+    SYNTAX      IpAddress
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Stored in non-vol, 0.0.0.0 after factory reset."
+    ::= { rdkbRgIpMgmtWanAddrStatic 3 }
+
+rdkbRgIpMgmtWanStaticNameServerEnable OBJECT-TYPE
+    SYNTAX TruthValue
+    MAX-ACCESS read-write
+    STATUS current
+    DESCRIPTION
+        "Defines whether static WAN DNS is enabled."
+    ::= { rdkbRgIpMgmtWanAddrStatic 4 }
+
+rdkbRgIpMgmtWanStaticHostName OBJECT-TYPE
+    SYNTAX      SnmpAdminString
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "This is the static host name of WAN."
+    ::= { rdkbRgIpMgmtWanAddrStatic 5 }
+
+rdkbRgIpMgmtWanStaticDomainName OBJECT-TYPE
+    SYNTAX      SnmpAdminString
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "This is the static domain name of WAN."
+    ::= { rdkbRgIpMgmtWanAddrStatic 6 }
+
+-- removed node rdkbRgIpMgmt 10,11,12
+
+-- **********************
+-- LAN PORT Control Table
+-- **********************
+rdkbRgIpMgmtLanPortControl   OBJECT IDENTIFIER ::=  { rdkbRgIpMgmt 13 }
+
+
+rdkbRgIpMgmtLanPortControlTable OBJECT-TYPE
+       SYNTAX      SEQUENCE OF RdkbRgIpMgmtLanPortControlEntry
+       MAX-ACCESS  not-accessible
+       STATUS      current
+       DESCRIPTION
+               "Table to control the mode for each LAN PORT.
+               LAN PORTs are numbered 1-4 and are mapped to physical
+               port location. Each port can either be in router or
+               in bridge mode."
+    ::= { rdkbRgIpMgmtLanPortControl 1 }
+
+rdkbRgIpMgmtLanPortControlEntry OBJECT-TYPE
+    SYNTAX      RdkbRgIpMgmtLanPortControlEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            ""
+    INDEX { rdkbRgIpMgmtLanPortControlIndex }
+    ::= { rdkbRgIpMgmtLanPortControlTable 1 }
+
+RdkbRgIpMgmtLanPortControlEntry ::= SEQUENCE {
+    rdkbRgIpMgmtLanPortControlIndex       INTEGER,
+    rdkbRgIpMgmtLanPortMode               INTEGER
+    }
+
+rdkbRgIpMgmtLanPortControlIndex OBJECT-TYPE
+    SYNTAX      INTEGER (1..4)
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "The index for each LAN port"
+    ::= { rdkbRgIpMgmtLanPortControlEntry 1 }
+
+rdkbRgIpMgmtLanPortMode OBJECT-TYPE
+    SYNTAX  INTEGER {
+            bridge (1),
+            router (2)
+            }
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+            "Each physical LAN port can either be controlled
+            as bridge or router. The rdkbRgIpMgmtLanPortMode MIB only works
+            when RdkbRgIpMgmtLanMode.32=4(Mixed). Setting this MIB
+            through SNMP will take effect only after
+            rdkbRgIpMgmtApplySettings.0 set to true and this setting will
+            reboot to take effect"
+    ::= { rdkbRgIpMgmtLanPortControlEntry 2 }
+
+-- removed node rdkbRgIpMgmt 14, 15
+
+--===================================================================
+--
+-- rdkbRgIpMgmtLanConnectedClientsTable 
+--
+--===================================================================
+
+rdkbRgIpMgmtLanConnectedClientsTable OBJECT-TYPE
+    SYNTAX SEQUENCE OF RdkbRgIpMgmtLanConnectedClientsEntry
+    MAX-ACCESS not-accessible
+    STATUS current
+    DESCRIPTION
+            "Lan connected clients."
+    ::= { rdkbRgIpMgmt 16 }
+
+rdkbRgIpMgmtLanConnectedClientsEntry OBJECT-TYPE
+    SYNTAX      RdkbRgIpMgmtLanConnectedClientsEntry
+    MAX-ACCESS  not-accessible
+    STATUS     current
+    DESCRIPTION
+            "List of connected clients."
+    INDEX { rdkbRgIpMgmtLanConnectedClientsIndex }
+    ::= { rdkbRgIpMgmtLanConnectedClientsTable 1 }
+
+RdkbRgIpMgmtLanConnectedClientsEntry ::= SEQUENCE {
+	rdkbRgIpMgmtLanConnectedClientsIndex              INTEGER,
+	rdkbRgIpMgmtLanConnectedClientsPhysAddr           PhysAddress,
+	rdkbRgIpMgmtLanConnectedClientsAddressSource          SnmpAdminString,
+	rdkbRgIpMgmtLanConnectedClientsIpv4Addr           IpAddress,
+	rdkbRgIpMgmtLanConnectedClientsHostName           SnmpAdminString,
+	rdkbRgIpMgmtLanConnectedClientsInterface           SnmpAdminString,
+	rdkbRgIpMgmtLanConnectedClientsActive       	  TruthValue,
+	rdkbRgIpMgmtLanConnectedClientsComments           SnmpAdminString,
+	rdkbRgIpMgmtLanConnectedClientsRSSI               Integer32
+    }
+
+rdkbRgIpMgmtLanConnectedClientsIndex    OBJECT-TYPE
+    SYNTAX      INTEGER
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "The index of the client connected ."
+    ::= { rdkbRgIpMgmtLanConnectedClientsEntry 1 }
+
+rdkbRgIpMgmtLanConnectedClientsPhysAddr OBJECT-TYPE
+    SYNTAX      PhysAddress
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+            "MAC address of the client connected to the Lan."
+    ::= { rdkbRgIpMgmtLanConnectedClientsEntry 2 }
+
+rdkbRgIpMgmtLanConnectedClientsAddressSource OBJECT-TYPE
+    SYNTAX      SnmpAdminString
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+            "Address source of the client DHCP/ReservedIp."
+    ::= { rdkbRgIpMgmtLanConnectedClientsEntry 3 }
+
+rdkbRgIpMgmtLanConnectedClientsIpv4Addr OBJECT-TYPE
+    SYNTAX      IpAddress
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+            "IPv4 address obtained by the client from DHCP server."
+    ::= { rdkbRgIpMgmtLanConnectedClientsEntry 4 }
+
+rdkbRgIpMgmtLanConnectedClientsHostName OBJECT-TYPE
+    SYNTAX      SnmpAdminString
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+            "Hostname of the client ."
+    ::= { rdkbRgIpMgmtLanConnectedClientsEntry 5 }
+
+rdkbRgIpMgmtLanConnectedClientsInterface OBJECT-TYPE
+    SYNTAX      SnmpAdminString
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+            "Interface of the connected client ."
+    ::= { rdkbRgIpMgmtLanConnectedClientsEntry 6 }
+
+rdkbRgIpMgmtLanConnectedClientsActive OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+            "DHCPv4 status of the connected client."
+    ::= { rdkbRgIpMgmtLanConnectedClientsEntry 7 }
+
+rdkbRgIpMgmtLanConnectedClientsComments OBJECT-TYPE
+    SYNTAX      SnmpAdminString
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+            "Comments of the connected client ."
+    ::= { rdkbRgIpMgmtLanConnectedClientsEntry 8 }
+    
+rdkbRgIpMgmtLanConnectedClientsRSSI OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+            "Signal strength of the connected client in dBm. It is applicable only for wifi clients."
+    ::= { rdkbRgIpMgmtLanConnectedClientsEntry 9 }    
+
+-- Apply setting to activate chagnes:
+rdkbRgIpMgmtApplySettings OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "If set to true(1), then all the settings (MIB values)
+         from this MIB tree will be applied to run time configuration,
+         modifying previous RG operation with the new settings.
+         Before setting the value to true, MIBs modified in the MIB
+         tree are stored in non-vol and will not modify RG operation
+         until rdkbRgIpMgmtApplySettings is set to true or CM resets.
+         Note: this applies only to the MIB objects that are stored
+         in non-vol.
+         Always returns false(2) when read."
+    ::= { rdkbRgIpMgmt 1001 }
+
+
+
+-- =============================================
+-- FIREWALL
+--
+-- Also includes port tiggering, forwarding, DMZ
+-- =============================================
+
+rdkbRgFirewall OBJECT IDENTIFIER ::=  { rdkbRg 4 }
+
+rdkbRgFirewallBase OBJECT IDENTIFIER ::=  { rdkbRgFirewall 1 }
+
+rdkbRgFirewallProtection OBJECT-TYPE
+SYNTAX INTEGER {
+disable(0),
+low(1),
+medium (2),
+high (3),
+custom (4)
+}
+MAX-ACCESS read-write
+STATUS current
+DESCRIPTION
+"Controls the firewall. This parameter is stored in non-vol and
+is enabled after factory reset.
+Disable: Completely disables the SPI Firewall
+Low/ Enable: Is Equivalent to Old Firewall Enable Mode with No Ports Restricted
+Medium: Enables the SPI Firewall plus includes a list of Allowed Services that will be allowed to through the Firewall
+High: Enables the SPI Firewall plus a shortened list of Allowed Services
+Custom: Enables the SPI Firewall set to custom values. For use with Puma-based products."
+::= { rdkbRgFirewallBase 1 }
+
+rdkbRgFirewallDmzAddress OBJECT-TYPE
+    SYNTAX      IpAddress
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+            "Stored in non-vol, 0.0.0.0 after facroty reset."
+    ::= { rdkbRgFirewallBase 2 }
+
+rdkbRgFirewallPortForwardEnable OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Enables or disables firewall port forwarding on the device."
+    DEFVAL { false }
+    ::= { rdkbRgFirewallBase 3 }
+
+rdkbRgFirewallPortTriggerEnable OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Enables or disables firewall port triggering on the device."
+    DEFVAL { false }
+    ::= { rdkbRgFirewallBase 4 }
+
+rdkbRgFirewallTraffic OBJECT IDENTIFIER ::=  { rdkbRgFirewall 2 }
+
+
+rdkbRgFirewallWANBlockingEnable OBJECT-TYPE
+    SYNTAX TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Controls WAN blocking RG feature.
+         Stored in non-vol, enabled after factory reset."
+    ::= { rdkbRgFirewallTraffic 4 }
+
+-- Firewall events reporting
+
+rdkbRgFirewallReport OBJECT IDENTIFIER ::=  { rdkbRgFirewall 4 }
+
+rdkbRgFirewallReportEventTable OBJECT-TYPE
+       SYNTAX      SEQUENCE OF RdkbRgFirewallReportEventEntry
+       MAX-ACCESS  not-accessible
+       STATUS      current
+       DESCRIPTION
+               "This table is stored in non-vol and is empty
+                after factory reset."
+    ::= { rdkbRgFirewallReport 1 }
+
+rdkbRgFirewallReportEventEntry OBJECT-TYPE
+    SYNTAX      RdkbRgFirewallReportEventEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            ""
+    INDEX { rdkbRgFirewallReportEventIndex }
+    ::= { rdkbRgFirewallReportEventTable 1 }
+
+RdkbRgFirewallReportEventEntry ::= SEQUENCE {
+    rdkbRgFirewallReportEventIndex          INTEGER,
+    rdkbRgFirewallReportEventDescription    SnmpAdminString,
+    rdkbRgFirewallReportEventCount          INTEGER,
+    rdkbRgFirewallReportEventLastOccurance  SnmpAdminString,
+    rdkbRgFirewallReportEventTarget         SnmpAdminString,
+    rdkbRgFirewallReportEventSource         SnmpAdminString
+    }
+
+rdkbRgFirewallReportEventIndex OBJECT-TYPE
+    SYNTAX      INTEGER
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "The index"
+    ::= { rdkbRgFirewallReportEventEntry 1 }
+
+rdkbRgFirewallReportEventDescription OBJECT-TYPE
+    SYNTAX      SnmpAdminString
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+            ""
+    ::= { rdkbRgFirewallReportEventEntry 2 }
+
+rdkbRgFirewallReportEventCount OBJECT-TYPE
+    SYNTAX      INTEGER
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+            ""
+    ::= { rdkbRgFirewallReportEventEntry 3 }
+
+rdkbRgFirewallReportEventLastOccurance OBJECT-TYPE
+    SYNTAX      SnmpAdminString
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+            ""
+    ::= { rdkbRgFirewallReportEventEntry 4 }
+
+rdkbRgFirewallReportEventTarget OBJECT-TYPE
+    SYNTAX      SnmpAdminString
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+            ""
+    ::= { rdkbRgFirewallReportEventEntry 5 }
+
+rdkbRgFirewallReportEventSource OBJECT-TYPE
+    SYNTAX      SnmpAdminString
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+            ""
+    ::= { rdkbRgFirewallReportEventEntry 6 }
+
+
+rdkbRgFirewallReportMgmt OBJECT IDENTIFIER ::=  { rdkbRgFirewallReport 2 }
+
+rdkbRgFirewallReportMgmtClearLog OBJECT-TYPE
+    SYNTAX TruthValue
+    MAX-ACCESS    read-write
+    STATUS        current
+    DESCRIPTION
+        "Note: this object does not need rdkbRgFirewallApplySettings
+         to take effect."
+    DEFVAL { false }
+    ::= { rdkbRgFirewallReportMgmt 1 }
+
+rdkbRgFirewallReportEmailLogNow OBJECT-TYPE
+    SYNTAX TruthValue
+    MAX-ACCESS    read-write
+    STATUS        current
+    DESCRIPTION
+        "Triggers sending currect logs via email. Always returns false.
+         Note: this objects does not need rdkbRgFirewallApplySettings to
+         send the logs."
+    DEFVAL { false }
+    ::= { rdkbRgFirewallReportMgmt 2 }
+
+
+rdkbRgFirewallReportEmail OBJECT IDENTIFIER ::=  { rdkbRgFirewallReport 3 }
+
+rdkbRgFirewallReportEmailEnable OBJECT-TYPE
+    SYNTAX TruthValue
+    MAX-ACCESS    read-write
+    STATUS        current
+    DESCRIPTION
+        "Enables sending logs via email. Email is sent when an event happens."
+    ::= { rdkbRgFirewallReportEmail 1 }
+
+rdkbRgFirewallReportEmailAddress OBJECT-TYPE
+    SYNTAX SnmpAdminString
+    MAX-ACCESS    read-write
+    STATUS        current
+    DESCRIPTION
+        "This is stored in non-vol and is empty after factory reset."
+    ::= { rdkbRgFirewallReportEmail 2 }
+
+rdkbRgFirewallReportEmailSmtpServer OBJECT-TYPE
+    SYNTAX SnmpAdminString
+    MAX-ACCESS    read-write
+    STATUS        current
+    DESCRIPTION
+        "IP address or FQDN.
+         Stored in non-vol. Empty after factory reset."
+    ::= { rdkbRgFirewallReportEmail 3 }
+
+rdkbRgFirewallReportEmailUsername OBJECT-TYPE
+    SYNTAX SnmpAdminString
+    MAX-ACCESS    read-write
+    STATUS        current
+    DESCRIPTION
+        "This is stored in non-vol and is empty after factory reset."
+    ::= { rdkbRgFirewallReportEmail 4 }
+
+rdkbRgFirewallReportEmailPassword OBJECT-TYPE
+    SYNTAX SnmpAdminString
+    MAX-ACCESS    read-write
+    STATUS        current
+    DESCRIPTION
+        "This is stored in non-vol and is empty after factory reset."
+    ::= { rdkbRgFirewallReportEmail 5 }
+
+
+-- Firewall IP filtering
+
+rdkbRgFirewallRules OBJECT IDENTIFIER ::=  { rdkbRgFirewall 5 }
+
+
+-- removed node rdkbRgFirewall Node 1,2,3
+
+rdkbRgFirewallMacFilterEnable OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "True = Enable the Mac address filtering feature. False = disable.
+        this Value is written to non-vol and set to false after a factory reset."
+    DEFVAL { false }
+    ::= { rdkbRgFirewallRules 4 }
+
+rdkbRgFirewallMacFilterMode OBJECT-TYPE
+    SYNTAX      INTEGER {
+        block(0),
+        permit(1)
+        }
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "block(0)- Macs listed in the rdkbRgFirewallMacFilterEntryTable will be blocked.
+        permit(1)- Macs listed in the rdkbRgFirewallMacFilterEntryTable will be permitted.
+        This value is written to non-vol and is set to block(0) after a factory reset."
+    DEFVAL { 0 }
+    ::= { rdkbRgFirewallRules 5 }
+
+rdkbRgFirewallPortFilterEnable OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "True = Enable the Port filtering feature. False = disable.
+        this Value is written to non-vol and set to false after a factory reset."
+    DEFVAL { false }
+    ::= { rdkbRgFirewallRules 6 }
+
+rdkbRgFirewallUrlKeywordFiltering   OBJECT IDENTIFIER ::=  { rdkbRgFirewallRules 7 }
+
+rdkbRgFirewallUrlKeywordFilterEnable OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "True = Enable the Url Keyword filtering feature. False = disable.
+        this Value is written to non-vol and set to false after a factory reset."
+    DEFVAL { false }
+    ::= { rdkbRgFirewallUrlKeywordFiltering 1 }
+
+rdkbRgFirewallUrlKeywordFilterTable  OBJECT-TYPE
+    SYNTAX      SEQUENCE OF RdkbRgFirewallUrlKeywordFilterEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "A table of url and keyword rules that are denied from accessing Internet."
+    ::= { rdkbRgFirewallUrlKeywordFiltering 2 }
+
+rdkbRgFirewallUrlKeywordFilterEntry OBJECT-TYPE
+    SYNTAX      RdkbRgFirewallUrlKeywordFilterEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "A row in the table that specifies a single station MAC address."
+    INDEX   { rdkbRgFirewallUrlKeywordFilterIndex }
+    ::= { rdkbRgFirewallUrlKeywordFilterTable 1 }
+
+RdkbRgFirewallUrlKeywordFilterEntry ::=
+    SEQUENCE    {
+            rdkbRgFirewallUrlKeywordFilterIndex            INTEGER,
+            rdkbRgFirewallUrlKeywordFilterRowStatus        RowStatus,
+            rdkbRgFirewallUrlKeywordFilterMethod           INTEGER,
+            rdkbRgFirewallUrlKeywordFilterMatch            OCTET STRING,
+            rdkbRgFirewallUrlKeywordFilterAlwaysBlock      TruthValue,
+            rdkbRgFirewallUrlKeywordFilterBlockStartTime   OCTET STRING,
+            rdkbRgFirewallUrlKeywordFilterBlockEndTime     OCTET STRING,
+            rdkbRgFirewallUrlKeywordFilterBlockDays        BITS
+    }
+
+rdkbRgFirewallUrlKeywordFilterIndex OBJECT-TYPE
+    SYNTAX      INTEGER (1..20)
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "The index"
+    ::= { rdkbRgFirewallUrlKeywordFilterEntry 1 }
+
+rdkbRgFirewallUrlKeywordFilterRowStatus OBJECT-TYPE
+    SYNTAX      RowStatus
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+            "The row status. A row can be destroyed.
+             If the row is not used, set to notInService."
+    ::= { rdkbRgFirewallUrlKeywordFilterEntry 2 }
+
+rdkbRgFirewallUrlKeywordFilterMethod OBJECT-TYPE
+    SYNTAX      INTEGER {
+                url(1),
+                keyword(2)
+        }
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "If url(1),deny access to specific websites (URLs)
+        If keyword(2), deny access to websites containing specific words"
+    ::= { rdkbRgFirewallUrlKeywordFilterEntry 3 }
+
+rdkbRgFirewallUrlKeywordFilterMatch OBJECT-TYPE
+    SYNTAX      OCTET STRING
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "URLs or specific words according to Method set"
+    ::= { rdkbRgFirewallUrlKeywordFilterEntry 4 }
+
+rdkbRgFirewallUrlKeywordFilterAlwaysBlock OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "If true(1), always be blocked, regardless of startTime, endTime and blockDays
+        If false(2), blocked at time set in startTime, endTime and blockDays"
+    DEFVAL { true }
+    ::= { rdkbRgFirewallUrlKeywordFilterEntry 5 }
+
+rdkbRgFirewallUrlKeywordFilterBlockStartTime OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (5))
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "24 Hour format HH:MM to set the start time to block"
+    ::= { rdkbRgFirewallUrlKeywordFilterEntry 6 }
+
+rdkbRgFirewallUrlKeywordFilterBlockEndTime OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (5))
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "24 Hour format HH:MM to set the end time to block"
+    ::= { rdkbRgFirewallUrlKeywordFilterEntry 7 }
+
+rdkbRgFirewallUrlKeywordFilterBlockDays OBJECT-TYPE
+    SYNTAX      BITS {
+        sun(0),
+        mon(1),
+        tue(2),
+        wed(3),
+        thu(4),
+        fri(5),
+        sat(6)
+        }
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "BITMAP to indicate which days to block"
+    ::= { rdkbRgFirewallUrlKeywordFilterEntry 8 }
+
+-- Removed node   rdkbRgFirewall 6,7
+
+
+rdkbRgFirewallHttpBlockingEnable OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Enables or disables firewall HTTP blocking on the device."
+    DEFVAL { false }
+    ::= { rdkbRgFirewall 8 }
+
+rdkbRgFirewallP2pBlockingEnable OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Enables or disables firewall P2P blocking on the device."
+    DEFVAL { false }
+    ::= { rdkbRgFirewall 9 }
+
+rdkbRgFirewallIdentBlockingEnable OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Enables or disables firewall ident blocking on the device."
+    DEFVAL { false }
+    ::= { rdkbRgFirewall 10 }
+
+rdkbRgFirewallIcmpBlockingEnable OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Enables or disables firewall ICMP blocking on the device."
+    DEFVAL { false }
+    ::= { rdkbRgFirewall 11 }
+
+rdkbRgFirewallMulticastBlockingEnable OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Enables or disables firewall multicast blocking on the device."
+    DEFVAL { false }
+    ::= { rdkbRgFirewall 12 }
+
+rdkbRgFirewallApplySettings OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "If set to true(1), then all the settings (MIB values)
+         from this MIB tree will be applied to run time configuration,
+         modifying previous RG operation with the new settings.
+         Before setting the value to true, MIBs modified in the MIB
+         tree are stored in non-vol and will not modify RG operation
+         until rdkbRgFirewallApplySettings is set to true or CM resets.
+         Note: this applies only to the MIB objects that are stored
+         in non-vol.
+         Always returns false(2) when read."
+    ::= { rdkbRgFirewall 1001 }
+
+rdkbRgFirewallFactoryReset OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Set true(1) to restore default settings of firewall.
+         Always returns false(2) when read."
+    ::= { rdkbRgFirewall 1002 }
+
+-- ===
+-- RIP
+-- ===
+
+rdkbRgRip OBJECT IDENTIFIER ::=  { rdkbRg 5 }
+
+rdkbRgRipBase OBJECT IDENTIFIER ::=  { rdkbRgRip 1 }
+
+rdkbRgRipEnabled OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Enables or disables router information protocol support in the device."
+    DEFVAL { false }
+    ::= { rdkbRgRipBase 1 }
+
+rdkbRgRipMd5AuthEnable    OBJECT-TYPE
+    SYNTAX     TruthValue
+    MAX-ACCESS read-write
+    STATUS     current
+    DESCRIPTION
+        "Setting this object to true(1) causes the device to enable md5 auth"
+    ::= { rdkbRgRipBase 2 }
+
+rdkbRgRipMd5KeyId OBJECT-TYPE
+    SYNTAX     INTEGER (0..255)
+    MAX-ACCESS read-write
+    STATUS     current
+    DESCRIPTION
+        "Key ID value for Md5 auth.
+         This object return an empty string when read."
+    ::= { rdkbRgRipBase 3 }
+
+rdkbRgRipMd5KeyValue OBJECT-TYPE
+    SYNTAX     OCTET STRING (SIZE(0..16))
+    MAX-ACCESS read-write
+    STATUS     current
+    DESCRIPTION
+        "MD5 Key Value"
+    ::= { rdkbRgRipBase 4 }
+
+rdkbRgRipInterval OBJECT-TYPE
+    SYNTAX     INTEGER  (10..600)
+    MAX-ACCESS read-write
+    STATUS     current
+    DESCRIPTION
+        "Interval in Seconds for the Rip Reporting interval."
+    ::= { rdkbRgRipBase 5 }
+
+rdkbRgRipDestIpAddressType OBJECT-TYPE
+    SYNTAX      InetAddressType
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "The type of IP address assigned to the rgIpRipDestIpAddress."
+    DEFVAL { ipv4 }
+    ::= { rdkbRgRipBase 6 }
+
+rdkbRgRipDestIpAddress OBJECT-TYPE
+    SYNTAX      InetAddress
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Defines the RIP unicast destination IP Address for Rip Reports.
+         If this value returns 0.0.0.0 then this is the default
+         multicast IP address in the RFC (224.0.0.9)"
+    ::= { rdkbRgRipBase 7 }
+
+rdkbRgRipAuthType  OBJECT-TYPE
+    SYNTAX      INTEGER {
+        noAuth(1),
+        simplePassword(2),
+        md5(3)
+        }
+    MAX-ACCESS read-write
+    STATUS     current
+    DESCRIPTION
+        "For use with puma-based products,
+                NoAuth(1), no authentication,
+                SimplePassword(2), simple plain password,
+                MD5(3), md5 auth"
+        DEFVAL { noAuth }
+    ::= { rdkbRgRipBase 8 }
+
+rdkbRgRipAuthSimplePassword OBJECT-TYPE
+    SYNTAX     OCTET STRING
+    MAX-ACCESS read-write
+    STATUS     current
+    DESCRIPTION
+        "Simple password when auth type is 2"
+    ::= { rdkbRgRipBase 9 }
+
+
+-- ==========================
+-- removed node rdkbRg 6
+-- ==========================
+
+-- ===========================
+-- MoCA specific configuration
+-- ===========================
+
+rdkbRgMocaExtSpecific OBJECT IDENTIFIER ::= { rdkbRg 7 }
+
+rdkbRgMocaExtBase OBJECT IDENTIFIER ::= { rdkbRgMocaExtSpecific 1 }
+
+rdkbRgMocaExtProvisioning OBJECT IDENTIFIER ::= { rdkbRgMocaExtSpecific 2 }
+
+rdkbRgMocaExtProvFilename OBJECT-TYPE
+    SYNTAX SnmpAdminString
+    MAX-ACCESS read-write
+    STATUS current
+    DESCRIPTION
+        "Specifies the filename for extender provisioning.
+         The string is sent in DHCP OFFER and ACK as boot file to the extender.
+         If not set, boot file option is empty."
+    DEFVAL { "" }
+    ::= { rdkbRgMocaExtProvisioning 1 }
+
+rdkbRgMocaExtProvServerType OBJECT-TYPE
+    SYNTAX InetAddressType
+    MAX-ACCESS read-write
+    STATUS current
+    DESCRIPTION
+        "Specifies the type for IP address for extender provisioning"
+    DEFVAL { ipv4 }
+    ::= { rdkbRgMocaExtProvisioning 2 }
+
+rdkbRgMocaExtProvServer OBJECT-TYPE
+    SYNTAX InetAddress
+    MAX-ACCESS read-write
+    STATUS current
+    DESCRIPTION
+        "Specifies the IP address for extender provisioning.
+         The address is sent in DHCP OFFER and ACK as next server to the extender.
+         If not set, the next server field is empty."
+    DEFVAL  { '00000000'h } -- 0.0.0.0
+    ::= { rdkbRgMocaExtProvisioning 3 }
+
+
+
+-- ===========
+-- Removed node rdkbRg 8,9,10,11,12
+-- ===========
+
+
+-- ==================================
+-- Wifi Hotspot Specific Information
+-- ==================================
+
+rdkbRgWifiHotspotMib OBJECT IDENTIFIER ::= { rdkbRg 13 }
+
+rdkbRgWifiHotspotBase OBJECT IDENTIFIER ::= { rdkbRgWifiHotspotMib 1 }
+
+rdkbRgWifiHotspotEnabled OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Enables or disable Wifi Hotspot support in the device."
+   ::= { rdkbRgWifiHotspotBase 1 }
+
+rdkbRgWifiHotspotTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF RdkbRgWifiHotspotEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "A table used to configure settings related to Wi-fi Hotspot."
+    ::= { rdkbRgWifiHotspotBase 2 }
+
+rdkbRgWifiHotspotEntry OBJECT-TYPE
+    SYNTAX      RdkbRgWifiHotspotEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+         "An entry defining the Wi-fi hotspot characteristics of an
+          individual Wi-Fi network interface."
+    INDEX   { rdkbRgWifiHotspotIf }
+    ::= { rdkbRgWifiHotspotTable 1 }
+
+RdkbRgWifiHotspotEntry ::=
+    SEQUENCE    {
+        rdkbRgWifiHotspotInstance              Unsigned32,
+        rdkbRgWifiHotspotIf                    INTEGER,
+        rdkbRgWifiHotspotMode                  INTEGER,
+        rdkbRgWifiHotspotCpeIdleTimeout        Unsigned32,
+        rdkbRgWifiHotspotCpeSessionTimeout     Unsigned32,
+        rdkbRgWifiHotspotRadiusAccAddressType  InetAddressType,
+        rdkbRgWifiHotspotRadiusAccAddress      InetAddress,
+        rdkbRgWifiHotspotRadiusAccPort         InetPortNumber,
+        rdkbRgWifiHotspotRadiusAccKey          DisplayString,
+        rdkbRgWifiHotspotPacketFilterMask      Unsigned32,
+        rdkbRgWifiHotspotInsertDhcpOptionsMask Unsigned32,
+        rdkbRgWifiHotspotRowStatus             RowStatus,
+		rdkbRgWifiHotspotRadiusAccInterimInterval Unsigned32
+    }
+
+
+rdkbRgWifiHotspotInstance    OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "The key for a unique instance of this object."
+    ::= { rdkbRgWifiHotspotEntry 1 }
+
+rdkbRgWifiHotspotIf OBJECT-TYPE
+    SYNTAX      INTEGER {
+                        wifi1-0(1),
+                        wifi1-1(2),
+                        wifi1-2(3),
+                        wifi1-3(4),
+                        wifi1-4(5),
+                        wifi1-5(6),
+                        wifi1-6(7),
+                        wifi1-7(8),
+                        wifi2-0(9),
+                        wifi2-1(10),
+                        wifi2-2(11),
+                        wifi2-3(12),
+                        wifi2-4(13),
+                        wifi2-5(14),
+                        wifi2-6(15),
+                        wifi2-7(16)
+        }
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "Wi-fi network interface."
+    ::= { rdkbRgWifiHotspotEntry 2 }
+
+rdkbRgWifiHotspotMode OBJECT-TYPE
+    SYNTAX      INTEGER {
+                disable(1),
+                enableBridge(2),
+                enableL2oGre(3)
+    }
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "Wi-fi Hotsot mode:
+         enableBridge - Wi-Fi traffic will be bridged
+         enableL2oGre - Wi-Fi traffic will be sent over GRE tunnel.
+                        GRE Tunnel should be configured and enabled."
+    ::= { rdkbRgWifiHotspotEntry 3 }
+
+rdkbRgWifiHotspotCpeIdleTimeout OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "CPE inactivity/idle timeout in seconds which will trigger disconnect.
+         Value of 0 will disable inactivity tracking."
+    ::= { rdkbRgWifiHotspotEntry 4 }
+
+rdkbRgWifiHotspotCpeSessionTimeout OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "CPE maximum session duration timeout in seconds.
+         Value of 0 will disable tracking session duration."
+    ::= { rdkbRgWifiHotspotEntry 5 }
+
+rdkbRgWifiHotspotRadiusAccAddressType OBJECT-TYPE
+    SYNTAX      InetAddressType
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "The type of internet address used for rdkbRgWifiHotspotRadiusAccAddress."
+    ::= { rdkbRgWifiHotspotEntry 6 }
+
+rdkbRgWifiHotspotRadiusAccAddress OBJECT-TYPE
+    SYNTAX      InetAddress
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "The internet address of the RADIUS Accounting server for this service set."
+    ::= { rdkbRgWifiHotspotEntry 7 }
+
+rdkbRgWifiHotspotRadiusAccPort OBJECT-TYPE
+    SYNTAX      InetPortNumber
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "The UDP port used to communicate with the RADIUS Accounting server.
+         Default value set to 1813."
+    DEFVAL { 1813 }
+    ::= { rdkbRgWifiHotspotEntry 8 }
+
+rdkbRgWifiHotspotRadiusAccKey OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "The RADIUS Accounting server shared security key."
+    ::= { rdkbRgWifiHotspotEntry 9 }
+
+rdkbRgWifiHotspotPacketFilterMask OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "Bit mask for limiting traffic to certain packet types.
+         Possible value:
+         11111111 11111111 11111111 11111111: Allow All traffic
+         xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxx1: Allow IPv4 (0x0800) packets
+         xxxxxxxx xxxxxxxx xxxxxxxx xxxxxx1x: Allow IPv6 (0x86dd) packets
+         xxxxxxxx xxxxxxxx xxxxxxxx xxxxx1xx: Allow IPx  (0x8137) packets
+         xxxxxxxx xxxxxxxx xxxxxxxx xxxx1xxx: Allow ARP  (0x0806) packets
+         xxxxxxxx xxxxxxxx xxxxxxxx xxx1xxxx: Allow RARP (0x8035) packets
+         xxxxxxxx xxxxxxxx xxxxxxxx xx1xxxxx: Allow VLAN (0x8100) packets
+         "
+    ::= { rdkbRgWifiHotspotEntry 10 }
+
+rdkbRgWifiHotspotInsertDhcpOptionsMask OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "Bit mask for inserting DHCP options in DHCP Discover/Request packet from
+         connected wifi client device.
+         Possible value:
+         0x1: Insert DHCP relay agent option 82.
+              circuit-id sub-option: AP-MAC-ADDRESS;SSID-NAME;SSID-TYPE
+         0x2: Insert DHCP relay agent option 82.
+              remote-id  sub-option: String containing MAC address of connected
+                                     wifi client device in the format XX:XX:XX:XX:XX:XX.
+         0x4: Insert/Modify DHCP option 60 with string containing SSID Name.
+		 0x8: Enables/Disables CM MAC address (format XX:XX:XX:XX:XX:XX) included in DHCP option 82.2 remote-id"
+    ::= { rdkbRgWifiHotspotEntry 11 }
+
+rdkbRgWifiHotspotRowStatus OBJECT-TYPE
+    SYNTAX RowStatus
+    MAX-ACCESS read-create
+    STATUS current
+    DESCRIPTION
+        "The RowStatus interlock for the creation and deletion
+        can be modified at any time while the row is active(1)."
+    ::= { rdkbRgWifiHotspotEntry 12 }
+
+rdkbRgWifiHotspotRadiusAccInterimInterval OBJECT-TYPE 
+    SYNTAX      Unsigned32 
+    MAX-ACCESS  read-create 
+    STATUS      current 
+    DESCRIPTION 
+              "Setting to control interval between each RADIUS interim update in seconds. 
+              Feature may be disabled by setting to zero, else minimum value is 60" 
+	DEFVAL { 900 }
+    ::= { rdkbRgWifiHotspotEntry 13 }
+
+rdkbRgWifiHotspotAutRateLimit OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Authentication rate limit in messages per second. If client exceeds
+         this limit, authentication from the client is ignored for
+         rdkbRgWifiHotspotAutDenialTimeout."
+   ::= { rdkbRgWifiHotspotBase 3 }
+
+rdkbRgWifiHotspotAutDenialTimeout OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Timeout in seconds during which authentication from a client is ignored
+         once authentication message rate exceeds rdkbRgWifiHotspotAutRateLimit."
+   ::= { rdkbRgWifiHotspotBase 4 }
+
+rdkbRgWifiHotspotRadiusOrigIf OBJECT-TYPE
+    SYNTAX      INTEGER {
+                eRouter(1),
+                cm(2)
+        }
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Originating interface of radius authentication and accounting traffic."
+    ::= { rdkbRgWifiHotspotBase 5 }
+
+rdkbRgWifiHotspotIgnoreMaxCpeSetting OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "This setting is applicable for wifi hotspot bridged mode.
+         When set to true(1), clients connected through the hotspot wifi will not be
+         counted when enforcing the 'Maximum CPE devices' on DOCSIS."
+   ::= { rdkbRgWifiHotspotBase 6 }
+
+rdkbRgWifiHotspotCapable OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Returns whether the device is capable of WiFi HotSpot functionality."
+   ::= { rdkbRgWifiHotspotBase 7 }
+
+rdkbRgWifiHotspotConnectedClientsTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF RdkbRgWifiHotspotConnectedClientsEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "Clients table connected to Wi-fi Hotspot."
+    ::= { rdkbRgWifiHotspotBase 8 }
+
+rdkbRgWifiHotspotConnectedClientsEntry OBJECT-TYPE
+    SYNTAX      RdkbRgWifiHotspotConnectedClientsEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+         "An entry defining the Wi-fi hotspot connected clients"
+    INDEX   { rdkbRgWifiHotspotIf, rdkbRgWifiHotspotConnectedClientsIndex }
+    ::= { rdkbRgWifiHotspotConnectedClientsTable 1 }
+
+RdkbRgWifiHotspotConnectedClientsEntry ::=
+    SEQUENCE    {
+        rdkbRgWifiHotspotConnectedClientsIndex              INTEGER,
+                rdkbRgWifiHotspotConnectedClientsPhysAddr                   PhysAddress,
+        rdkbRgWifiHotspotConnectedClientsRssiLevel          Integer32,
+                rdkbRgWifiHotspotConnectedClientsIpv4Addr                   IpAddress,
+                rdkbRgWifiHotspotConnectedClientsHostName           SnmpAdminString,
+                rdkbRgWifiHotspotConnectedClientsDhcpv4Status               INTEGER
+    }
+
+rdkbRgWifiHotspotConnectedClientsIndex    OBJECT-TYPE
+    SYNTAX      INTEGER
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "The index of the client connected to specific hotspot ssid."
+    ::= { rdkbRgWifiHotspotConnectedClientsEntry 1 }
+
+rdkbRgWifiHotspotConnectedClientsPhysAddr OBJECT-TYPE
+    SYNTAX      PhysAddress
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+            "MAC address of the client connected to the Hotspot SSID"
+    ::= { rdkbRgWifiHotspotConnectedClientsEntry 2 }
+
+rdkbRgWifiHotspotConnectedClientsRssiLevel OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+            "Signal strength of the Hotspot client in dBm"
+    ::= { rdkbRgWifiHotspotConnectedClientsEntry 3 }
+
+rdkbRgWifiHotspotConnectedClientsIpv4Addr OBJECT-TYPE
+    SYNTAX      IpAddress
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+            "IPv4 address obtained by the client from Hotspot DHCP server"
+    ::= { rdkbRgWifiHotspotConnectedClientsEntry 4 }
+
+rdkbRgWifiHotspotConnectedClientsHostName OBJECT-TYPE
+    SYNTAX      SnmpAdminString
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+            "Hostname of the client based on DHCP option 12."
+    ::= { rdkbRgWifiHotspotConnectedClientsEntry 5 }
+
+rdkbRgWifiHotspotConnectedClientsDhcpv4Status OBJECT-TYPE
+    SYNTAX      INTEGER  {
+                                        discover(1),
+                                        offer(2),
+                                        request(3),
+                                        ack(4),
+                                        nack(5)
+                        }
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+            "DHCPv4 status of the Hotspot client."
+    ::= { rdkbRgWifiHotspotConnectedClientsEntry 6 }
+
+rdkbRgWifiHotspotDisablePMKCaching OBJECT-TYPE     
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Enables or disable WPA2 PMK Caching. By default this feature is enable"
+	DEFVAL { true }
+   ::= { rdkbRgWifiHotspotBase 9 }
+
+rdkbRgWifiHotspotConnectionSpeedMin OBJECT-TYPE     
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Minimum connection speed in kbps required by client to maintain connectivity."
+   ::= { rdkbRgWifiHotspotBase 10 }
+
+rdkbRgWifiHotspotConnectionSpeedTimeout OBJECT-TYPE     
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Timeout in seconds during which client is allowed to maintain connectivity
+         once connection speed is below rdkbRgWifiHotspotConnectionSpeedMin. When timeout
+         expires client is disassociated."
+   ::= { rdkbRgWifiHotspotBase 11 }
+   
+-- ====================================================
+-- L2oGRE tunnel for Wifi Hotspot specific information
+-- ====================================================
+
+rdkbRgL2ogreMib OBJECT IDENTIFIER ::= { rdkbRg 14 }
+
+rdkbRgL2ogreBase OBJECT IDENTIFIER ::= { rdkbRgL2ogreMib 1 }
+
+rdkbRgL2ogreEnabled OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Enables or disable GRE Tunnel support in the device."
+    DEFVAL { false }
+   ::= { rdkbRgL2ogreBase 1 }
+
+rdkbRgL2ogrePriRemoteAddressType OBJECT-TYPE
+    SYNTAX      InetAddressType
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "The IP address type (ipv4, ipv6 or dns) of primary remote
+         endpoint of the GRE tunnel."
+    DEFVAL { ipv4 }
+    ::= { rdkbRgL2ogreBase 2 }
+
+rdkbRgL2ogrePriRemoteAddress OBJECT-TYPE
+    SYNTAX      InetAddress
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "IP address or FQDN of primary remote endpoint of the GRE tunnel."
+    ::= { rdkbRgL2ogreBase 3 }
+
+rdkbRgL2ogreSecRemoteAddressType OBJECT-TYPE
+    SYNTAX      InetAddressType
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "The IP address type (ipv4, ipv6 or dns) of secondary remote
+         endpoint of the GRE tunnel."
+    DEFVAL { ipv4 }
+    ::= { rdkbRgL2ogreBase 4 }
+
+rdkbRgL2ogreSecRemoteAddress OBJECT-TYPE
+    SYNTAX      InetAddress
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "IP address or FQDN of secondary remote endpoint of the GRE tunnel."
+    ::= { rdkbRgL2ogreBase 5 }
+
+rdkbRgL2ogreDSCP OBJECT-TYPE
+    SYNTAX      Integer32 (0..63)
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "The method is used to set the high 6 bits of TOS in the
+         IPv4 header or traffic class in IPv6 header."
+    ::= { rdkbRgL2ogreBase 6 }
+
+rdkbRgL2ogreKeepAliveMode OBJECT-TYPE
+    SYNTAX      INTEGER {
+                disabled(1),
+                ping(2),
+                ping-noswitchover(3)
+    }
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Keepalive modes for failover mechanism.
+         ping - Use ICMP pings within tunnel as a keepalive messages."
+    ::= { rdkbRgL2ogreBase 7 }
+
+rdkbRgL2ogreKeepAliveCount OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Number of keep-alive messages sent at regular interval."
+    ::= { rdkbRgL2ogreBase 8 }
+
+rdkbRgL2ogreKeepAliveInterval OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Interval in seconds between keep-alive messages."
+    ::= { rdkbRgL2ogreBase 9 }
+
+rdkbRgL2ogreKeepAliveFailureThreshold OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Number of keep-alive failures that will cause fail-over."
+    ::= { rdkbRgL2ogreBase 10 }
+
+rdkbRgL2ogreStatsTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF RdkbRgL2ogreStatsEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "This table provides statistical information of GRE tunnel."
+    ::= { rdkbRgL2ogreBase 11 }
+
+rdkbRgL2ogreStatsEntry OBJECT-TYPE
+    SYNTAX      RdkbRgL2ogreStatsEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "This table provides statistical information of GRE tunnel."
+    INDEX { rdkbRgL2ogreStatsIndex }
+    ::= { rdkbRgL2ogreStatsTable 1 }
+
+RdkbRgL2ogreStatsEntry ::= SEQUENCE {
+    rdkbRgL2ogreStatsIndex                    Integer32,
+    rdkbRgL2ogreStatsBytesSent                Counter64,
+    rdkbRgL2ogreStatsBytesReceived            Counter64,
+    rdkbRgL2ogreStatsPacketsSent              Counter64,
+    rdkbRgL2ogreStatsPacketsReceived          Counter64,
+    rdkbRgL2ogreStatsDiscardPacketsReceived   Counter64,
+    rdkbRgL2ogreStatsErrorPacketsReceived     Counter64,
+    rdkbRgL2ogreStatsKeepAliveSent            Counter64,
+    rdkbRgL2ogreStatsKeepAliveReceived        Counter64,
+    rdkbRgL2ogreStatsRowStatus                RowStatus
+}
+
+rdkbRgL2ogreStatsIndex OBJECT-TYPE
+    SYNTAX      Integer32 (1..256)
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "Table index"
+    ::= { rdkbRgL2ogreStatsEntry 1 }
+
+rdkbRgL2ogreStatsBytesSent OBJECT-TYPE
+    SYNTAX      Counter64
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Number bytes sent."
+    ::= { rdkbRgL2ogreStatsEntry 2 }
+
+rdkbRgL2ogreStatsBytesReceived OBJECT-TYPE
+    SYNTAX      Counter64
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Number bytes received."
+    ::= { rdkbRgL2ogreStatsEntry 3 }
+
+rdkbRgL2ogreStatsPacketsSent OBJECT-TYPE
+    SYNTAX      Counter64
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Number packets sent."
+    ::= { rdkbRgL2ogreStatsEntry 4 }
+
+rdkbRgL2ogreStatsPacketsReceived OBJECT-TYPE
+    SYNTAX      Counter64
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Number packets received."
+    ::= { rdkbRgL2ogreStatsEntry 5 }
+
+rdkbRgL2ogreStatsDiscardPacketsReceived OBJECT-TYPE
+    SYNTAX      Counter64
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Number packets received that were discarded.
+         Because source network interface is down."
+    ::= { rdkbRgL2ogreStatsEntry 6 }
+
+rdkbRgL2ogreStatsErrorPacketsReceived OBJECT-TYPE
+    SYNTAX      Counter64
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Number packets received that were in error.
+         Because tunnel packets are not correct type.
+         Eg. Received IP packet instead of L2 packets."
+    ::= { rdkbRgL2ogreStatsEntry 7 }
+
+rdkbRgL2ogreStatsKeepAliveSent OBJECT-TYPE
+    SYNTAX      Counter64
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Number keepalive packets sent."
+    ::= { rdkbRgL2ogreStatsEntry 8 }
+
+rdkbRgL2ogreStatsKeepAliveReceived OBJECT-TYPE
+    SYNTAX      Counter64
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Number keepalive packets received."
+    ::= { rdkbRgL2ogreStatsEntry 9 }
+
+rdkbRgL2ogreSourceIfTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF RdkbRgL2ogreSourceIfEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "This table contains information specific to network source interface
+         whose traffic is mapped into GRE tunnel."
+    ::= { rdkbRgL2ogreBase 12 }
+
+rdkbRgL2ogreSourceIfEntry OBJECT-TYPE
+    SYNTAX      RdkbRgL2ogreSourceIfEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "List of individual source interface entries mapped into GRE tunnel."
+    INDEX { rdkbRgL2ogreSourceIfInstance }
+    ::= { rdkbRgL2ogreSourceIfTable 1 }
+
+RdkbRgL2ogreSourceIfEntry ::= SEQUENCE {
+    rdkbRgL2ogreSourceIfInstance           Unsigned32,
+    rdkbRgL2ogreSourceIf                   INTEGER,
+    rdkbRgL2ogreSourceIfEnabled            TruthValue,
+    rdkbRgL2ogreSourceIfVlanTag            Integer32,
+    rdkbRgL2ogreSourceIfMplsHeader         Integer32,
+    rdkbRgL2ogreSourceIfRowStatus          RowStatus
+}
+
+rdkbRgL2ogreSourceIfInstance    OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "The key for a unique instance of this object."
+    ::= {rdkbRgL2ogreSourceIfEntry 1 }
+
+rdkbRgL2ogreSourceIf OBJECT-TYPE
+    SYNTAX      INTEGER {
+                        wifi1-0(1),
+                        wifi1-1(2),
+                        wifi1-2(3),
+                        wifi1-3(4),
+                        wifi1-4(5),
+                        wifi1-5(6),
+                        wifi1-6(7),
+                        wifi1-7(8),
+                        wifi2-0(9),
+                        wifi2-1(10),
+                        wifi2-2(11),
+                        wifi2-3(12),
+                        wifi2-4(13),
+                        wifi2-5(14),
+                        wifi2-6(15),
+                        wifi2-7(16)
+        }
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "Source interface whose traffic will be pass through GRE tunnel."
+    ::= { rdkbRgL2ogreSourceIfEntry 2 }
+
+rdkbRgL2ogreSourceIfEnabled OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "Enables or disable mapping traffic from network interface into GRE tunnel."
+   ::= { rdkbRgL2ogreSourceIfEntry 3 }
+
+rdkbRgL2ogreSourceIfVlanTag OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "Add VLAN tag consists of 16bit of Tag Protocol Identifier (TPID)
+         and 16 bit of Tag Control Identifier (TCI).
+         Value of 0 will disable adding VLAN tag.
+         Tag Protocol Identifier (TPID) should set to 0x8100."
+    ::= { rdkbRgL2ogreSourceIfEntry 4 }
+
+rdkbRgL2ogreSourceIfMplsHeader OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "MPLS Header. Value of 0 will disable adding MPLS Header."
+    ::= { rdkbRgL2ogreSourceIfEntry 5 }
+
+rdkbRgL2ogreSourceIfRowStatus OBJECT-TYPE
+    SYNTAX      RowStatus
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "The RowStatus interlock for the creation and deletion of a table entry."
+    ::= { rdkbRgL2ogreSourceIfEntry 6 }
+
+rdkbRgL2ogreOrigIf OBJECT-TYPE
+    SYNTAX      INTEGER {
+                eRouter(1)
+               }
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Originating Interface of GRE tunnel."
+    ::= { rdkbRgL2ogreBase 13 }
+
+rdkbRgL2ogreConcentratorServiceName OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "FQDN of GRE tunnel concentrator/gw service.
+         If this is set then, DNS Query of type SRV will be used for discovering
+         FQDN of primary and secondary remote endpoint of GRE tunnel."
+    ::= { rdkbRgL2ogreBase 14 }
+
+rdkbRgL2ogreDnsResolverRetryTimerMin OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Minimum timeout interval in seconds before retrying DNS query."
+    ::= { rdkbRgL2ogreBase 15 }
+
+rdkbRgL2ogreDnsResolverRetryTimerMax OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Maximum timeout interval in seconds before retrying DNS query."
+    ::= { rdkbRgL2ogreBase 16 }
+
+rdkbRgL2ogreKeepAliveFailureInterval OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Configured interval between pings for WLAN GW when disabled due to both WLAN GWs failing."
+    ::= { rdkbRgL2ogreBase 17 }
+
+rdkbRgL2ogreKeepAliveReattemptInterval OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Configured interval to reattempt connection to a primary WLAN GW even when secondary WLAN GW is available and clients are connected."
+    ::= { rdkbRgL2ogreBase 18 }
+    
+rdkbRgL2ogreEnableCircuitID OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Enables or disable GRE Tunnel CircuitID in the device."
+    DEFVAL { true }
+   ::= { rdkbRgL2ogreBase 19 } 
+   
+rdkbRgL2ogreEnableRemoteID OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Enables or disable GRE Tunnel RemoteID in the device."
+    DEFVAL { true }
+   ::= { rdkbRgL2ogreBase 20 }        
+
+
+-- removed node rdgRg 15
+
+-- ====================================================
+-- Network Extender Status MIB
+-- ====================================================
+
+rdkbRgNetworkExtenders OBJECT IDENTIFIER ::= { rdkbRg 16 }
+
+rdkbRgNetworkExtenderTable  OBJECT-TYPE
+    SYNTAX      SEQUENCE OF RdkbRgNetworkExtenderEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "Multiple Attached Network Extender Table. Maximum of 8 Entries"
+
+    ::= { rdkbRgNetworkExtenders 1 }
+
+rdkbRgNetworkExtenderEntry OBJECT-TYPE
+    SYNTAX      RdkbRgNetworkExtenderEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "A row in the table which represents information about attached Network Extender."
+    INDEX   { rdkbRgNetworkExtenderIndex }
+    ::= { rdkbRgNetworkExtenderTable 1 }
+
+RdkbRgNetworkExtenderEntry ::= SEQUENCE {
+      rdkbRgNetworkExtenderIndex                INTEGER,
+      rdkbRgNetworkExtenderIpAddress            IpAddress,
+      rdkbRgNetworkExtenderDeviceName           OCTET STRING,
+      rdkbRgNetworkExtenderVenderName           OCTET STRING,
+      rdkbRgNetworkExtenderModelNumber          OCTET STRING,
+      rdkbRgNetworkExtenderFirmwareVersion      OCTET STRING
+    }
+
+rdkbRgNetworkExtenderIndex OBJECT-TYPE
+    SYNTAX      INTEGER (1..8)
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "The index of the the table.  Up to 8 connected devices supported"
+    ::= { rdkbRgNetworkExtenderEntry 1 }
+
+rdkbRgNetworkExtenderIpAddress OBJECT-TYPE
+    SYNTAX      IpAddress
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "The IP Address of the Device"
+    ::= { rdkbRgNetworkExtenderEntry 2 }
+
+rdkbRgNetworkExtenderDeviceName OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE(0..32))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "The Name of the Device as returned by HNAP"
+    ::= { rdkbRgNetworkExtenderEntry 3 }
+
+rdkbRgNetworkExtenderVenderName OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE(0..32))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "The Vender Name as returned by HNAP"
+    ::= { rdkbRgNetworkExtenderEntry 4 }
+
+rdkbRgNetworkExtenderModelNumber OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE(0..32))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "The Model Number of the Device as returned by HNAP"
+    ::= { rdkbRgNetworkExtenderEntry 5 }
+
+rdkbRgNetworkExtenderFirmwareVersion OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE(0..32))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "The Firmware version of the Device as returned by HNAP"
+    ::= { rdkbRgNetworkExtenderEntry 6 }
+
+-- ====================================================
+-- Network Extender Radio Status Table
+-- ====================================================
+
+rdkbRgNetworkExtenderRadioTable  OBJECT-TYPE
+    SYNTAX      SEQUENCE OF RdkbRgNetworkExtenderRadioEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "Attached Network Extender Radio Table. Maximum of 32 entries (per extender).
+        If the attached device has no radios/SSID, this table will be empty"
+    ::= { rdkbRgNetworkExtenders 2 }
+
+rdkbRgNetworkExtenderRadioEntry OBJECT-TYPE
+    SYNTAX      RdkbRgNetworkExtenderRadioEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "A row in the table for Network Extender attached WiFi Radios."
+    INDEX       {   rdkbRgNetworkExtenderIndex,
+                                rdkbRgNetworkExtenderRadioIndex }
+    ::= { rdkbRgNetworkExtenderRadioTable 1 }
+
+RdkbRgNetworkExtenderRadioEntry ::= SEQUENCE {
+        rdkbRgNetworkExtenderRadioIndex           INTEGER,
+        rdkbRgNetworkExtenderRadioSSID            OCTET STRING,
+        rdkbRgNetworkExtenderRadioBSSID           PhysAddress,
+        rdkbRgNetworkExtenderRadioChannel         OCTET STRING,
+        rdkbRgNetworkExtenderRadioMode            OCTET STRING
+    }
+
+rdkbRgNetworkExtenderRadioIndex OBJECT-TYPE
+    SYNTAX      INTEGER (1..32)
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "The index of the radio/SSID. Up to 32 SSIDs supported"
+    ::= { rdkbRgNetworkExtenderRadioEntry 1 }
+
+rdkbRgNetworkExtenderRadioSSID OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE(0..32))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "The SSID of the radio as by HNAP"
+    ::= { rdkbRgNetworkExtenderRadioEntry 2 }
+
+rdkbRgNetworkExtenderRadioBSSID OBJECT-TYPE
+    SYNTAX      PhysAddress
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "The BSSID as reported by HNAP"
+    ::= { rdkbRgNetworkExtenderRadioEntry 3 }
+
+rdkbRgNetworkExtenderRadioChannel OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE(0..32))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Returns the Primary Radio Channel Number as reported by HNAP"
+    ::= { rdkbRgNetworkExtenderRadioEntry 4 }
+
+rdkbRgNetworkExtenderRadioMode OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE(0..32))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Returns the Radio Operational Mode as reported by HNAP"
+    ::= { rdkbRgNetworkExtenderRadioEntry 5 }
+
+-- ====================================================
+-- Network Extender Connected Client Table
+-- ====================================================
+rdkbRgNetworkExtenderClientTable  OBJECT-TYPE
+    SYNTAX      SEQUENCE OF RdkbRgNetworkExtenderClientEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "Attached Network Extender Client Table. Maximum of 64 Entries per Extender"
+    ::= { rdkbRgNetworkExtenders 3 }
+
+rdkbRgNetworkExtenderClientEntry OBJECT-TYPE
+    SYNTAX      RdkbRgNetworkExtenderClientEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "A row in the table denoting Network Extender Clients."
+    INDEX       {   rdkbRgNetworkExtenderIndex,
+                    rdkbRgNetworkExtenderClientIndex }
+    ::= { rdkbRgNetworkExtenderClientTable  1 }
+
+RdkbRgNetworkExtenderClientEntry ::= SEQUENCE {
+         rdkbRgNetworkExtenderClientIndex          INTEGER,
+         rdkbRgNetworkExtenderClientMAC            PhysAddress,
+         rdkbRgNetworkExtenderClientInterface      OCTET STRING
+    }
+
+rdkbRgNetworkExtenderClientIndex OBJECT-TYPE
+    SYNTAX      INTEGER (1..64)
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "The index of the Client."
+    ::= { rdkbRgNetworkExtenderClientEntry 1 }
+
+
+rdkbRgNetworkExtenderClientMAC OBJECT-TYPE
+    SYNTAX      PhysAddress
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Returns the client's MAC as reported by HNAP"
+    ::= { rdkbRgNetworkExtenderClientEntry 2 }
+
+rdkbRgNetworkExtenderClientInterface OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE(0..32))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Returns the client's connected interface per HNAP.   Wifi-2.4, Wifi-5.0, Ethernet, etc"
+    ::= { rdkbRgNetworkExtenderClientEntry 3 }
+
+------------------------------
+------- TR-069 module --------
+------------------------------
+
+rdkbTR069    
+		MODULE-IDENTITY
+        LAST-UPDATED    "201408130000Z"
+        ORGANIZATION    "TBD"
+        CONTACT-INFO    "TBD"
+        DESCRIPTION
+            "Controls the configuration of TR-069 client"
+
+        ::= { rdkbModules 3 }
+        
+rdkbTR069ClientConfig   OBJECT IDENTIFIER ::=  { rdkbTR069 1 }
+
+rdkbTR069ClientMode OBJECT-TYPE
+    SYNTAX INTEGER  {
+        disable(0),
+        enable(1)
+        }
+    MAX-ACCESS  read-write 
+    STATUS      current
+    DESCRIPTION  
+            "Enabling this MIB starts the TR-069 client to communicate with ACS"
+    DEFVAL { 0 }
+    ::= { rdkbTR069ClientConfig 1 }
+
+rdkbTR069ClientAcsUrl OBJECT-TYPE
+    SYNTAX OCTET STRING (SIZE(0..255))
+    MAX-ACCESS read-write
+    STATUS current
+    DESCRIPTION
+        " Sets the ACS Management Server URL.
+          This parameter is stored in non-vol and is NULL by default.
+         "
+    ::= { rdkbTR069ClientConfig 2 }
+    
+rdkbTR069ClientAcsUsername OBJECT-TYPE
+    SYNTAX OCTET STRING (SIZE(0..255))
+    MAX-ACCESS read-write
+    STATUS current
+    DESCRIPTION
+        " Sets the username associated with the ACS Management Server.
+          This parameter is stored in non-vol and is NULL by default.
+        "
+    ::= { rdkbTR069ClientConfig 3 }
+
+rdkbTR069ClientAcsPassword OBJECT-TYPE
+    SYNTAX OCTET STRING (SIZE(0..255))
+    MAX-ACCESS read-write
+    STATUS current
+    DESCRIPTION
+        " Sets the password associated with the ACS Management Server.
+          This parameter is stored in non-vol and is NULL by default.
+          
+          NOTE: This should be a hidden value in SNMPGET/SNMPWALK but user 
+	        should be able to set this using SNMPSET
+        "          
+    ::= { rdkbTR069ClientConfig 4 }
+    
+rdkbTR069ClientCrUsername OBJECT-TYPE
+    SYNTAX OCTET STRING (SIZE(0..255))
+    MAX-ACCESS read-write
+    STATUS current
+    DESCRIPTION
+        " Set the username associated with the connection request from the ACS.
+          This parameter is stored in non-vol and is NULL by default.
+        "
+    ::= { rdkbTR069ClientConfig 5 }
+
+rdkbTR069ClientCrPassword OBJECT-TYPE
+    SYNTAX OCTET STRING (SIZE(0..255))
+    MAX-ACCESS read-write
+    STATUS current
+    DESCRIPTION
+        " Set the password associated with the connection request from the ACS.
+          This parameter is stored in non-vol and is NULL by default.    
+          
+          NOTE: This should be a hidden value in SNMPGET/SNMPWALK but user 
+	        should be able to set this using SNMPSET
+        "
+    ::= { rdkbTR069ClientConfig 6 }
+    
+
+rdkbTR069ClientPeriodicInform OBJECT-TYPE 
+    SYNTAX INTEGER  {
+        disable(0),
+        enable(1)
+        }
+    MAX-ACCESS  read-write 
+    STATUS      current
+    DESCRIPTION  
+            "Enable the TR-069 client, allowing informs to occur at the periodic rate."
+    DEFVAL { 1 }
+    ::= { rdkbTR069ClientConfig 7 }
+
+rdkbTR069ClientPeriodicInformInterval OBJECT-TYPE 
+    SYNTAX INTEGER  (1..2147483647)
+    UNITS	"Seconds"	
+    MAX-ACCESS  read-write 
+    STATUS      current
+    DESCRIPTION  
+            "Specify the periodic inform interval in seconds.
+             Not advisable to have inform interval less than 180 seconds (3 min)"
+    DEFVAL { 600 }
+    ::= { rdkbTR069ClientConfig 8 }
+
+rdkbTR069ClientAllowDocsisConfig OBJECT-TYPE 
+    SYNTAX INTEGER  {
+        disable(0),
+        enable(1)
+        }
+    MAX-ACCESS  read-write 
+    STATUS      current
+    DESCRIPTION  
+         "In operation, X_DOCSIS_AllowDocsisConfiguration in a factory-defaulted cable modem will be true,allowing the device to contact its ACS or an activation server using either a factory-default 
+         ACS URL and other parameters, or ACS URL and other parameters supplied in the DOCSIS configuration file.Once the initial contact is established the ACS modifies the URL, and X_DOCSIS_AllowDocsisConfiguration 
+	     is automatically set to false. Subsequent re-booting of the device will use the modified address is accordance with TR-069.The ACS may relinquish this control by explicitly setting X_DOCSIS_AllowDocsisConfiguration to false. 
+	     The next time the device reboots the URL can again be accepted from the DOCSSIS configuration file.X_DOCSIS_AllowDocsisConfiguration also defaults to true, so resetting the device to factory defaults 
+	     also re-enables the DOCSIS configuration file."
+    DEFVAL { 1 }
+    ::= { rdkbTR069ClientConfig 9 }
+
+
+rdkbTR069ClientConnReqUrl OBJECT-TYPE
+    SYNTAX OCTET STRING (SIZE(0..255))
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        " This is set by default during the initial bootup.Connection Request URL is used by the ACS to solicit Gateway and make the client checkin to ACS.
+          This parameter is stored in non-vol. "
+    ::= { rdkbTR069ClientConfig 10 }
+
+rdkbTR069ClientAcsControlPanelUrl OBJECT-TYPE
+    SYNTAX OCTET STRING (SIZE(0..255))
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        " Set by the ACS when the client checks in. The user is re-directed to this link when try to access local GUI
+          This parameter is stored in non-vol and is NULL by default.
+        "
+    ::= { rdkbTR069ClientConfig 11 }
+
+rdkbTR069ClientDeviceIdentifier OBJECT-TYPE
+   SYNTAX INTEGER {
+       useSerialNumber(0),
+       useCmMacAddress(1)
+   }
+   MAX-ACCESS   read-write
+   STATUS       current
+   DESCRIPTION
+       "Defines the value used to identify this device with the ACS.  This value will show up in the ACS server under the Serial Number field.
+             useSerialNumber(0):       The InternetGatewayDevice.DeviceInfo.SerialNumber parameter will return the device's serial number (e.g. 234567890).
+             useCmMacAddress(1):    The InternetGatewayDevice.DeviceInfo.SerialNumber parameter will return the device's CM MAC address (e.g. 00407B1A2B3C).
+       "
+   DEFVAL { 0 }
+   ::= { rdkbTR069ClientConfig 12 }
+
+rdkbWebPA    
+		MODULE-IDENTITY
+        LAST-UPDATED    "201408130000Z"
+        ORGANIZATION    "TBD"
+        CONTACT-INFO    "TBD"
+        DESCRIPTION
+            "Controls the configuration of WEBPA"
+
+        ::= { rdkbModules 4 }
+
+rdkbWebpaObjs   OBJECT IDENTIFIER ::=  { rdkbWebPA 1 }
+
+rdkbRgWebPAEnable OBJECT-TYPE 
+    SYNTAX      TruthValue 
+    MAX-ACCESS  read-write 
+    STATUS      current 
+    DESCRIPTION  
+            "Mib for enabling/disabling WebPA component,1 for true and 2 for false"
+    ::= { rdkbWebpaObjs 1 }
+
+rdkbRgWebPAServerURL OBJECT-TYPE 
+    SYNTAX      DisplayString (SIZE(0..255))
+    MAX-ACCESS  read-write 
+    STATUS      current 
+    DESCRIPTION  
+            "Defines what IP address to use for WebPA server
+             This value is to be stored in non-vol and will persist across reboots.
+             Only a factory reset would clear it"
+    ::= { rdkbWebpaObjs 2 }
+
+rdkbRgWebPAServerPort OBJECT-TYPE 
+    SYNTAX      INTEGER 
+    MAX-ACCESS  read-write 
+    STATUS      current 
+    DESCRIPTION  
+            "Defines what port to use for WebPA server
+             This value is to be stored in non-vol and will persist across reboots.
+             Only a factory reset would clear it"
+    DEFVAL { 8080 }
+    ::= { rdkbWebpaObjs 3 }
+
+rdkbRgWebPANetworkInterface OBJECT-TYPE 
+    SYNTAX      DisplayString (SIZE(0..255))
+    MAX-ACCESS  read-write 
+    STATUS      current 
+    DESCRIPTION  
+            "Defines the network interface to be used by WebPA 
+             This value is to be stored in non-vol and will persist across reboots.
+             Only a factory reset would clear it"
+    ::= { rdkbWebpaObjs 4 }
+
+rdkbRgWebPARetryInterval OBJECT-TYPE 
+    SYNTAX      INTEGER
+    UNITS       "seconds" 
+    MAX-ACCESS  read-write 
+    STATUS      current 
+    DESCRIPTION  
+            "Defines the web PA retry interval in sec
+             This value is to be stored in non-vol and will persist across reboots.
+             Only a factory reset would clear it"
+    ::= { rdkbWebpaObjs 5 }
+
+rdkbRgWebPAPingWaitTime OBJECT-TYPE 
+    SYNTAX      INTEGER
+    UNITS       "seconds" 
+    MAX-ACCESS  read-write 
+    STATUS      current 
+    DESCRIPTION  
+            "Defines the WebPA ping wait time in sec
+             This value is to be stored in non-vol and will persist across reboots.
+             Only a factory reset would clear it"
+   ::= { rdkbWebpaObjs 6 }
+
+END

@@ -1,0 +1,2637 @@
+ARRIS-CM-DOC30-DEVICE-MIB DEFINITIONS ::= BEGIN
+
+IMPORTS
+   MODULE-IDENTITY, OBJECT-TYPE, Integer32, Unsigned32, Gauge32,
+   IpAddress, TimeTicks, NOTIFICATION-TYPE
+      FROM SNMPv2-SMI
+   InetAddress,
+   InetAddressType
+      FROM INET-ADDRESS-MIB
+   arrisProdIdCM
+      FROM ARRIS-MIB
+   TruthValue, DisplayString, MacAddress, TEXTUAL-CONVENTION
+      FROM SNMPv2-TC
+   docsDevEvLevel,
+   docsDevEvId,
+   docsDevEvText
+       FROM DOCS-CABLE-DEVICE-MIB
+   ifPhysAddress
+       FROM IF-MIB
+   SnmpAdminString
+      FROM SNMP-FRAMEWORK-MIB
+    AmplitudeData
+        FROM DOCS-IF3-MIB
+    OBJECT-GROUP,
+    MODULE-COMPLIANCE,
+    NOTIFICATION-GROUP
+        FROM SNMPv2-CONF
+   docsIfCmCmtsAddress,
+   docsIfDocsisBaseCapability,
+   docsIfCmStatusDocsisOperMode,
+   docsIfCmStatusModulationType
+       FROM DOCS-IF-MIB; -- draft-ietf-ipcdn-docs-rfmibv2-05
+
+
+   arrisCmDoc30Mib MODULE-IDENTITY
+      LAST-UPDATED    "1612200000Z" -- DEC 20, 2016
+      ORGANIZATION    "ARRIS Broadband"
+      CONTACT-INFO    "Chris Hare
+                       Postal: ARRIS Broadband
+                       3871 Lakefield Drive
+                       Suite 300
+                       Suwanee, GA 30024-1242
+                       U.S.A.
+                       Phone:  +1 678-473-5165
+                       E-mail: chris.hare@arrisi.com"
+      DESCRIPTION
+       "This MIB module supplies the basic proprietary (ARRIS-specific)
+        management objects for ARRIS Cable Modem (CM) devices."
+
+      -- Revision history
+      REVISION "1612200000Z" -- Dec 20, 2016
+         DESCRIPTION
+             "Added the arrisCmDoc30DhcpExtendedRenewLease and arrisCmDoc30DhcpExtendedCmDUIDV6 MIB object"
+      REVISION "1612190000Z" -- Dec 19, 2016
+         DESCRIPTION
+             "Added removed OID definition back.
+                 arrisCmDoc30MfgCertCommunityName
+                 arrisCmDoc30ResetAccessTime
+                 arrisCmDoc30BaseReportDuplex
+                 arrisCmDoc30CustomID
+                 arrisCmDoc30ForceReset
+                 arrisCmDoc30AccessTelnetEnable
+                 arrisCmDoc30AccessSinglePassword
+                 arrisCmDoc30AccessHttpTimeout
+                 arrisCmDoc30CLITimeout
+                 arrisCmDoc30AccessHttpPwCtrl
+                 arrisCmDoc30AccessTechnicianPassword
+                 arrisCmDoc30SessionTime
+                 arrisCmDoc30SessionDataDownloaded
+                 arrisCmDoc30SessionDataUploaded
+                 arrisCmDoc30ResetActivitySummary
+                 arrisCmDoc30SetupDsBonding
+                 arrisCmDoc30SetupPacketProcessorEnable
+                 arrisCmDoc30SetupMultiColorLedBitmap
+                 arrisCmDoc30SetupSecDsLossReinitEnable
+                 arrisCmDoc30SetupPartServiceFallback20
+                 arrisCmDoc30SetupMddIpModeOverride
+                 arrisCmDoc30SetupPacketCableRegion
+                 arrisCmDoc30SetupTodDelaySecProv
+                 arrisCmDoc30SetupUdcAllowed
+                 arrisCmDoc30SetupDhcpRetries
+                 arrisCmDoc30SetupInvertMulticolorLEDs
+                 arrisCmDoc30SetupTurboDoxEnable
+                 arrisCmDoc30SetupMdfSupportOverride
+                 arrisCmDoc30SetupAdvancedWebPageAccess
+                 arrisCmDoc30SetupReducedOORThreshold
+                 arrisCmDoc30SetupPowerSaveMode
+                 arrisCmDoc30SetupPowerSaveOption
+                 arrisCmDoc30SetupKeepCpeOnIfDisconnect
+                 arrisCmDoc30SetupPowerSaveWifiShutdownOnly
+                 arrisCmDoc30SetupSWDLFilenameCheckOverride
+                 arrisCmDoc30SetupEthernetLinkBounce
+                 arrisCmDoc30SetupIgnoreMddSymbolClockIndicator
+                 arrisCmDoc30SetupTCPAckSuppression
+                 arrisCmDoc30SetupL2VPNPromiscuousMode
+                 arrisCmDoc30SetupExtendSwCurrentVersEnable
+                 arrisCmDoc30SetupT4timeoutRebootEnable
+                 arrisCmDoc30SetupExtendedUpstreamTransmitPowerValue
+                 arrisCmDoc30Setup6rdPPSupport
+                 arrisCmDoc30SetupT4EvCtrl
+                 arrisCmDoc30SetupExpandedBondingKey
+                 arrisCmDoc30BondingModeCapability
+                 arrisCmDoc30SetupIgnoreMtaDnsRDValidation
+                 arrisCmDoc30SetupTimeoffsetWrapper
+                 arrisCmDoc30SetupDownstreamScanMaskEnable
+                 arrisCmDoc30EtherEnergyEfficientEnable
+                 arrisCmDoc30SetupSwdlOperationalMode
+                 arrisCmDoc30MulticastDSIDForwarding
+                 arrisCmDoc30MgErouterForwarding
+                 arrisCmDoc30MgEnabledInterfaces
+                 arrisCmDoc30MgEnabledInterfacesString
+                 arrisCmDoc30MgFactoryAllowLEDControl
+                 arrisCmDoc30MgFactoryControlLEDs
+                 arrisCmDoc30IPAddressTable
+                 arrisCmDoc30IPAddressEntry
+                 arrisCmDoc30IPAddressIndex
+                 arrisCmDoc30IPAddressType
+                 arrisCmDoc30IPAddress
+                 arrisCmDoc30IPAddressAsString
+                 arrisCmDoc30IPAddressMacAddr
+                 arrisCmDoc30IPAddressDesc
+                 arrisCmDoc30DsgTimeoutAction
+                 arrisCmDoc30AppSwServerAddress
+                 arrisCmDoc30AppSwServerAddressType
+                 arrisCmDoc30AppSwFilename
+                 arrisCmDoc30AppSwImageType
+                 arrisCmDoc30AppSwAdminStatus
+                 arrisCmDoc30AppSwOperStatus
+                 arrisCmDoc30SpectrumMeasurementTable
+                 arrisCmDoc30SpectrumMeasurementEntry
+                 arrisCmDoc30SpectrumFrequency
+                 arrisCmDoc30SpectrumAmplitudeData
+                 arrisCmDoc30SpectrumEnable
+                 arrisCmDoc30SpectrumInactivityTimeout
+                 arrisCmDoc30LNAGain
+                 arrisCmDoc30EcmMode
+                 arrisCmDoc30DisableDocsis
+                 arrisCmDoc30SpecialReboot
+                 arrisCmDoc30RebootStatus
+                 arrisCmDoc30DhcpOfferedLeaseTime
+                 arrisCmDoc30DhcpTimeUntilRenew
+                 arrisCmDoc30DhcpTimeUntilRebind
+                 arrisCmDoc30DhcpLeaseTimeRemaining
+                 arrisCmDoc30DhcpState
+                 arrisCmDoc30DhcpPrimaryDhcpServerIpAddr
+                 arrisCmDoc30DhcpTftpSvrIpAddr
+                 arrisCmDoc30DhcpTimeSvrIpAddr
+                 arrisCmDoc30DhcpCmTimeOffset
+                 arrisCmDoc30DhcpPrimaryTeleDhcpSvr
+                 arrisCmDoc30DhcpSecondaryTeleDhcpSvr
+                 arrisCmDoc30DhcpCmIpAddrType
+                 arrisCmDoc30DhcpCmIpAddr
+                 arrisCmDoc30DhcpCmSubNetMask
+                 arrisCmDoc30DhcpCmGatewayIpAddr
+                 arrisCmDoc30DhcpCmConfigFile
+                 arrisCmDoc30DhcpMtaOpt60Override
+                 arrisCmDoc30SwTable
+                 arrisCmDoc30SwEntry
+                 arrisCmDoc30SwIndex
+                 arrisCmDoc30SwCustomerLoadId
+                 arrisCmDoc30SwHwModel
+                 arrisCmDoc30SwHwRev
+                 arrisCmDoc30SwFilename
+                 arrisCmDoc30SwServerAddressType
+                 arrisCmDoc30SwServerAddress
+                 arrisCmDoc30SwAdminStatus
+                 arrisCmDoc30SwOperStatus
+                 arrisCmDoc30SwCvcStatus
+                 arrisCmDoc30SwCvc1
+                 arrisCmDoc30SwCvc2
+                 arrisCmDoc30SwCvc3
+                 arrisCmDoc30SwCvc4
+                 arrisCmDoc30SwRegistrationState
+                 arrisCmDoc30EsafeSwTable
+                 arrisCmDoc30EsafeSwEntry
+                 arrisCmDoc30EsafeSwDeviceIndex
+                 arrisCmDoc30EsafeSwServerAddressType
+                 arrisCmDoc30EsafeSwServerAddress
+                 arrisCmDoc30EsafeSwFilename
+                 arrisCmDoc30EsafeSwAdminStatus
+                 arrisCmDoc30EsafeSwOperStatus
+                 arrisCmDoc30EsafeSwCurrentVers
+                 arrisCmDoc30EsafeSmartDownloadMode
+                 arrisCmDoc30EsafeSmartDownloadStatus "
+      REVISION "1612150000Z" -- DEC 15, 2016
+         DESCRIPTION
+             "Added the arrisCmDoc30DhcpExtendedDnsSvrTable MIB table"
+      REVISION "1612130000Z" -- DEC 13, 2016
+         DESCRIPTION
+             "Added the arrisCmDoc30DhcpExtendedSrvDUIDV6 MIB object."
+      REVISION "1612050000Z" -- Dec 05, 2016
+         DESCRIPTION
+             "Remove unwanted OIDs."
+      REVISION "1611230000Z" -- Nov 23, 2016
+         DESCRIPTION
+             "Updated the arrisCmDoc30DiplexerControl MIB, and added the arrisCmDoc30DiplexerFreqencyRanges MIB."
+      REVISION "1611170000Z" -- Nov 17, 2016
+         DESCRIPTION
+             "Added the arrisCmDoc30SetupLPCMEnable MIB to {arrisCmDoc30Setup 216}
+              Added the arrisCmDoc30SetupLPCM1x1Status MIB to {arrisCmDoc30Setup 217}
+              Added the arrisCmDoc30SetupLPCM1x1Force MIB to {arrisCmDoc30Setup 218}."             
+      REVISION "1608090000Z" -- Aug 09, 2016
+         DESCRIPTION
+             "Added the arrisCmDoc30DiplexerControl MIB object."
+::= { arrisProdIdCM 4 }
+
+CvcString ::= TEXTUAL-CONVENTION
+     DISPLAY-HINT "x"
+     STATUS current
+     DESCRIPTION "This data type defines a string of hex bytes comprising the CVC."
+     SYNTAX OCTET STRING (SIZE(0..255))
+
+arrisCmDoc30MibObjects           OBJECT IDENTIFIER ::= { arrisCmDoc30Mib 1 }
+arrisCmDoc30Base                 OBJECT IDENTIFIER ::= { arrisCmDoc30MibObjects 1 }
+arrisCmDoc30Access               OBJECT IDENTIFIER ::= { arrisCmDoc30MibObjects 2 }
+arrisCmDoc30Setup                OBJECT IDENTIFIER ::= { arrisCmDoc30MibObjects 3 }
+--
+-- The following group describes the Dhcp parameters objects
+--
+arrisCmDoc30Dhcp                 OBJECT IDENTIFIER ::= { arrisCmDoc30MibObjects 4 }
+arrisCmDoc30DhcpLeaseParameters  OBJECT IDENTIFIER ::= { arrisCmDoc30Dhcp 1 }
+arrisCmDoc30DhcpSvrParameters    OBJECT IDENTIFIER ::= { arrisCmDoc30Dhcp 2 }
+arrisCmDoc30DhcpCmParameters     OBJECT IDENTIFIER ::= { arrisCmDoc30Dhcp 3 }
+arrisCmDoc30DhcpMtaParameters    OBJECT IDENTIFIER ::= { arrisCmDoc30Dhcp 4 }
+--
+arrisCmDoc30Software             OBJECT IDENTIFIER ::= { arrisCmDoc30MibObjects 5 }
+arrisCmDoc30Esafe                OBJECT IDENTIFIER ::= { arrisCmDoc30MibObjects 6 }
+arrisCmDoc30EsafeSoftware        OBJECT IDENTIFIER ::= { arrisCmDoc30Esafe 1 }
+
+arrisCmDoc30ResetReasonLog       OBJECT IDENTIFIER ::= { arrisCmDoc30MibObjects 7 }
+
+--
+-- The following group describes the Dhcp Extended parameters objects
+--
+arrisCmDoc30DhcpExtended                 OBJECT IDENTIFIER ::= { arrisCmDoc30MibObjects 8 }
+
+arrisCmDoc30ResetFactoryDefaults OBJECT-TYPE
+     SYNTAX     TruthValue
+     MAX-ACCESS read-write
+     STATUS     current
+     DESCRIPTION
+     "Reset a number of settings to their default factory values.
+      This includes clearing the modem's frequency cache and
+      restoring a number of NVM parameters to their original values."
+     ::= { arrisCmDoc30Base 6 }
+
+arrisCmDoc30FwImageName OBJECT-TYPE
+      SYNTAX     DisplayString
+      MAX-ACCESS read-only
+      STATUS     current
+      DESCRIPTION
+      "The name of the firmware image currently operating on this device."
+      ::= { arrisCmDoc30Base 7 }
+
+arrisCmDoc30FwImageBuildTime OBJECT-TYPE
+      SYNTAX     DisplayString
+      MAX-ACCESS read-only
+      STATUS     current
+      DESCRIPTION
+      "The build date and time of the firmware image currently operating on
+       this device."
+      ::= { arrisCmDoc30Base 8 }
+
+arrisCmDoc30MfgCertCommunityName OBJECT-TYPE
+      SYNTAX     DisplayString
+      MAX-ACCESS read-only
+      STATUS     current
+      DESCRIPTION
+      "The community name of the Manufacturing certificate in use. 'US' for North American Docsis or
+      'BE' for European Docsis."
+      ::= { arrisCmDoc30Base 9 }
+
+arrisCmDoc30BondingMode OBJECT-TYPE
+      SYNTAX     DisplayString
+      MAX-ACCESS read-only
+      STATUS     current
+      DESCRIPTION
+      "The registration mode of the modem and how many DS/US it is using."
+      ::= { arrisCmDoc30Base 10 }
+
+arrisCmDoc30ResetAccessTime OBJECT-TYPE
+      SYNTAX     TruthValue
+      MAX-ACCESS read-write
+      STATUS     current
+      DESCRIPTION
+      "Setting this object to true(1) resets Access start times in NVRAM.
+      Reading this object always returns false(2)."
+      ::= { arrisCmDoc30Base 11 }
+
+arrisCmDoc30ProvisionedChannelIDs OBJECT-TYPE
+      SYNTAX DisplayString
+      MAX-ACCESS read-only
+      STATUS current
+      DESCRIPTION
+      "Displays channel IDs of all upstreams or downstreams provisioned by the
+      CMTS.  Downstreams that are not currently locked are enclosed in ()."
+      ::= { arrisCmDoc30Base 12 }
+
+arrisCmDoc30BaseReportDuplex OBJECT-TYPE
+     SYNTAX DisplayString(SIZE(0..255))
+     MAX-ACCESS  read-only
+     STATUS      current
+     DESCRIPTION
+     "Reports the current duplex status of the Ethernet Port.
+     Reading this object can return the strings 'Full', 'Half', or 'Unavailable'."
+     ::= { arrisCmDoc30Base 13 }
+
+arrisCmDoc30CustomID OBJECT-TYPE
+     SYNTAX     INTEGER
+     MAX-ACCESS read-write
+     STATUS     current
+     DESCRIPTION
+     "An integer which represents a customer ID for customization."
+     ::= { arrisCmDoc30Base 15}
+
+arrisCmDoc30ForceReset OBJECT-TYPE
+      SYNTAX     TruthValue
+      MAX-ACCESS read-write
+      STATUS     current
+      DESCRIPTION
+      "Setting this object to true(1) forces the device to reset.
+       Reading this object always returns false(2)."
+      ::= { arrisCmDoc30Base 16}
+
+arrisCmDoc30AccessTelnetPassword OBJECT-TYPE
+     SYNTAX DisplayString(SIZE(0..11))
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+     "The password required to enable telnet."
+     ::= { arrisCmDoc30Access 1 }
+
+arrisCmDoc30AccessTelnetEnable OBJECT-TYPE
+     SYNTAX INTEGER {
+        disable(0),
+        enable(1),
+        enableLanWan(2)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+     "Used to turn on/off telnet access. For telnet to be enabled, the
+     arrisCmDoc30AccessTelnetPassword MIB must be set."
+     ::= { arrisCmDoc30Access 2 }
+
+arrisCmDoc30AccessClientSeed OBJECT-TYPE
+     SYNTAX OCTET STRING (SIZE (8))
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+     "The DES encoded seed--provided by the user--that will be used
+      to generate the password for access to the CLI.
+      When read, this object will return a zero-length string."
+     ::= { arrisCmDoc30Access 3 }
+
+arrisCmDoc30AccessSinglePassword OBJECT-TYPE
+     SYNTAX DisplayString
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+     "The encoded password--provided by the user--that will be used
+      for single password access to the CLI.
+      When read, this object will return a zero-length string."
+     ::= { arrisCmDoc30Access 4 }
+
+arrisCmDoc30AccessHttpLan OBJECT-TYPE
+     SYNTAX INTEGER {
+        disable(0),
+        enable(1)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+     "Used to turn on/off LAN HTTP access. For LAN HTTP to be enabled, the
+     arrisCmDoc30AccessHttpLan MIB must be set to 1."
+     ::= { arrisCmDoc30Access 5 }
+
+arrisCmDoc30AccessHttpWan OBJECT-TYPE
+     SYNTAX INTEGER {
+        disable(0),
+        enable(1),
+        cmpage(3)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+     "Used to turn on/off WAN HTTP access. For WAN HTTP to be enabled, the
+     arrisCmDoc30AccessHttpWan MIB must be set to 1.
+     1: disable(0) - Turn off WAN HTTP access.
+     2: enable(1) - Turn on WAN HTTP access.
+     3: cmpage(3) - Only enables access to the CM Page. No redirect to the Gateway GUI is allowed."
+     ::= { arrisCmDoc30Access 6 }
+
+arrisCmDoc30AccessHttpTimeout OBJECT-TYPE
+     SYNTAX INTEGER
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+     "Used to set how long after login before web gui access times out.  In minutes, 0 disables timeout"
+     ::= { arrisCmDoc30Access 7 }
+
+arrisCmDoc30CLITimeout OBJECT-TYPE
+     SYNTAX      Unsigned32
+     MAX-ACCESS  read-write
+     STATUS      current
+     DESCRIPTION
+         "Max time that a telnet/SSH session can be idle before it is terminated.
+          Range is 0-65535 minutes, where 0 disables the timer completely."
+     ::= { arrisCmDoc30Access 8 }
+
+arrisCmDoc30AccessHttpPwCtrl OBJECT-TYPE
+     SYNTAX INTEGER {
+        none(0),
+        advanced(1),
+	all(2)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+     "Used to control which modem web pages are password protected.  A value of 0 means no pages
+     are protected, 1 means advanced pages, 2 means all pages."
+     ::= { arrisCmDoc30Access 9 }
+
+arrisCmDoc30AccessSSHEnable OBJECT-TYPE
+     SYNTAX INTEGER {
+        disable(0),
+        enable(1),
+	enableLanWan(2)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+     "Used to turn on/off SSH access. For SSH to be enabled, the
+     arrisCmDoc30AccessTelnetPassword MIB must be set.
+     For TWC, enable only for wan telnet enable, enableLanWan for wan and lan telnet enable.
+     For non-TWC, enable and enableLanWan are have the same behaviour"
+     ::= { arrisCmDoc30Access 10 }
+
+arrisCmDoc30AccessTechnicianPassword OBJECT-TYPE
+     SYNTAX DisplayString(SIZE(12..32))
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+     "The password for the technician."
+     ::= { arrisCmDoc30Access 11 }
+
+arrisCmDoc30SessionTime OBJECT-TYPE
+        SYNTAX      TimeTicks
+        MAX-ACCESS  read-only
+        STATUS      current
+        DESCRIPTION
+        "Time since the Device was last power cycled, rebooted or since the reset activity
+        button was last pressed."
+        ::= { arrisCmDoc30Access 12 }
+
+arrisCmDoc30SessionDataDownloaded OBJECT-TYPE
+        SYNTAX      Unsigned32
+        MAX-ACCESS  read-only
+        STATUS      current
+        DESCRIPTION
+        "Data download count since the Device was last power cycled, rebooted or since the
+        reset activity button was last pressed."
+        ::= { arrisCmDoc30Access 13 }
+
+arrisCmDoc30SessionDataUploaded OBJECT-TYPE
+        SYNTAX      Unsigned32
+        MAX-ACCESS  read-only
+        STATUS      current
+        DESCRIPTION
+        "Data upload count since the Device  was last power cycled, rebooted or since the
+        reset activity button was last pressed."
+        ::= { arrisCmDoc30Access 14 }
+
+arrisCmDoc30ResetActivitySummary OBJECT-TYPE
+        SYNTAX      TruthValue
+        MAX-ACCESS  read-write
+        STATUS      current
+        DESCRIPTION
+        "Device clears the arrisCmDoc30SessionTime, arrisCmDoc30SessionDataDownloaded and
+        arrisCmDoc30SessionDataUploaded  when set to true. Always return false(2)."
+        ::= { arrisCmDoc30Access 15 }
+
+arrisCMDoc30AccessWANACL OBJECT-TYPE
+     SYNTAX      DisplayString(SIZE(0..255))
+     MAX-ACCESS  read-write
+     STATUS      current
+     DESCRIPTION
+        "Access Control List of IPs that are allowed to originate request to access GUI via CM IP. If empty means no restrict.
+         Format: ip[-ip](;ip[-ip])*
+         Example: 10.0.0.0-10.255.255.255;172.44.56.0-172.44.56.244"
+	::= { arrisCmDoc30Access 16 }
+
+arrisCmDoc30SetupDsBonding OBJECT-TYPE
+     SYNTAX INTEGER {
+         disable(0),
+	 enable(1)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+     "This MIB is used to enable/disable downstream channel bonding. Changes take effect at the next
+      reboot. This MIB should only be set from the CM configuration file. If this MIB value is altered
+      in the CM configuration file, the CM will store the new setting and reboot automatically. If the
+      value of this MIB in NVM is 'disable' and the CM configuration file does not contain this MIB,
+      the CM will reset this MIB value in NVM to 'enable' and reboot.
+      The arrisCmDoc30ResetFactoryDefaults MIB will set the stored value back to 'enable'."
+      ::= {arrisCmDoc30Setup 1}
+
+arrisCmDoc30SetupPacketProcessorEnable OBJECT-TYPE
+     SYNTAX INTEGER {
+        disable(0),
+        enable(1)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+     "Used to turn on/off the modem's packet processor."
+     ::= { arrisCmDoc30Setup 2 }
+
+arrisCmDoc30SetupMultiColorLedBitmap OBJECT-TYPE
+     SYNTAX Unsigned32 (0..7)
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+     "Bitmap used to turn on/off the modem's multi-color LED functionality.  A value of 1 enables the
+      multi-color functionality and a value of 0 disables it.
+
+      0x1 Link LED
+      0x2 Upstream LED
+      0x4 Downstream LED
+
+      Devices with multiple rear Ethernet ports do not support multiple colors for the front panel Link LED.
+      They will ignore the Link LED bit 0x1."
+     ::= { arrisCmDoc30Setup 3 }
+
+arrisCmDoc30SetupSecDsLossReinitEnable OBJECT-TYPE
+     SYNTAX INTEGER {
+        disable(0),
+        enable(1)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+     "This MIB when enabled allows an outage of a bonded downstream secondary channel to force
+      a reinitialization to occur that makes the DOCSIS modem re-register.   This feature may
+      provide an improved level of partial services support on some early DOCSIS 3.0 CMTS.  This
+      MIB should be disabled when used with CMTS that fully support DOCSIS 3.0 CM-STATUS messages."
+     ::= { arrisCmDoc30Setup 4 }
+
+arrisCmDoc30SetupPartServiceFallback20 OBJECT-TYPE
+     SYNTAX INTEGER {
+        disable(0),
+        enable(1)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+     "This MIB when enabled prevents the REG-ACK message from sending up a partial services
+      confirmation code and instead will reinitialize the primary downstream DOCSIS MAC
+      and force the CM to fallback to DOCSIS 2.0 mode which limits the CM to 1x1.  Periodically
+      the CM with then retry to range and register in DOCSIS 3.0 mode.  This feature is
+      designed specifically to allow interoperability with early DOCSIS 3.0 CMTS releases
+      that do not support a REG-ACK message containing a partial services confirmation code.
+      This feature may provide an improved level of partial services support on some early DOCSIS 3.0 CMTS.
+      This MIB should be disabled when used with any CMTS that fully supports DOCSIS 3.0 CM-STATUS messages."
+     ::= { arrisCmDoc30Setup 5 }
+
+arrisCmDoc30SetupDSTPolicy OBJECT-TYPE
+    SYNTAX      DisplayString(SIZE(0..50))
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+          "This object is used to get and set the daylight saving time policy. This parameter
+          is a rule with two fields separated by semicolon (;) as shown below:
+          start=<start-time>;end=<end-time>
+          <start-time> and <end-time> are of the form: <month>/<day>/<weekday>/<HH>
+          <month> = 1,2,12 (for Jan, Feb, Dec)
+          <day> = [+|-]1,2,3,...,,31. If <day> is -1, it means the <weekday> on or before the end-of-the-month
+          (in other words the last occurrence of <weekday> in that month)
+          <weekday> = 1, 2, 3,..., 7 (for Mon, Tue, ..., Sun), or 0. If <weekday> is 0, it means the date to
+          start or end daylight saving is at exactly the given date. In that case, the <day> value must not be
+          negative. If <weekday> is not zero, then the daylight saving starts or ends on the <weekday> on or
+          after the given date if <day> is positive, or on or before the given date if <day> is negative.
+          <HH> = hour (0-23).
+          The following example reflects the new change starting March 2007 in U.S.A. DST starts on the second Sunday
+          in March and ends on the first Sunday in November:
+          start=3/8/7/02;end=11/1/7/02"
+    ::= { arrisCmDoc30Setup 6 }
+
+arrisCmDoc30SetupMddIpModeOverride OBJECT-TYPE
+     SYNTAX INTEGER {
+        disable(0),
+        ipv4(1),
+        ipv6(2),
+        apm(3),
+        dpm(4)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+          "This object is used to override the IP Mode TLV in the MDD message.
+          0 = use the MDD value
+          1 = IPv4 Only
+          2 = IPv6 Only
+          3 = Alternate (APM)
+          4 = Dual-stack (DPM)"
+    ::= { arrisCmDoc30Setup 7 }
+
+arrisCmDoc30SetupPacketCableRegion OBJECT-TYPE
+     SYNTAX INTEGER {
+        northAmerican(0),
+        european(1)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+     "This MIB is used to set the desired region for MTA PacketCable provisioning."
+     ::= { arrisCmDoc30Setup 8 }
+
+arrisCmDoc30SetupTodDelaySecProv OBJECT-TYPE
+     SYNTAX INTEGER {
+        disable(0),
+        enable(1)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+     "This MIB is used to delay secure provisioning when time-of-day retrieval fails."
+     ::= { arrisCmDoc30Setup 9 }
+
+arrisCmDoc30SetupUdcAllowed OBJECT-TYPE
+     SYNTAX INTEGER {
+        disallowed(0),
+        allowed(1)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+          "This object is used to disallow upstream drop classifiers, overriding the REG-RSP value.
+          0 = disallow UDC, regardless of what the CMTS sets
+          1 = allow UDC"
+    ::= { arrisCmDoc30Setup 10 }
+
+arrisCmDoc30SetupTODTimeOffset OBJECT-TYPE
+     SYNTAX      Integer32 (-43200..46800)
+     MAX-ACCESS  read-write
+     STATUS      current
+     DESCRIPTION
+         "This mib is used to update CM TOD time offset.
+         The range of the offset is -12*60*60(-43200) to 13*60*60(46800) in seconds.
+         13 is Daylight Savings Time in the +12 time zone).  The CM TOD time offset
+         is overwritten when this mib is set or CM dhcp time offset option is received."
+     DEFVAL { 0 }
+     ::= { arrisCmDoc30Setup 11 }
+
+arrisCmDoc30SetupDhcpRetries OBJECT-TYPE
+     SYNTAX INTEGER {
+        retry0x(0),
+        retry1x(1),
+        retry2x(2),
+        retry3x(3)
+     }
+     MAX-ACCESS  read-write
+     STATUS      current
+     DESCRIPTION
+         "DHCP Retries during provisioning.  This MIB object controls the number of times
+          the MTA will ignore the received, non-Secure (Basic or Hybrid) DHCP OFFER while
+          waiting for a Secure flow DHCP OFFER.  The value of this MIB object controls the
+          value of the CLI parameter PACM_CONFIG_PROV_DHCP_RETRIES."
+     ::= { arrisCmDoc30Setup 12 }
+
+arrisCmDoc30SetupInvertMulticolorLEDs OBJECT-TYPE
+     SYNTAX INTEGER {
+        disable(0),
+        enable(1)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+         "This MIB is used to enable/disable inverted multicolor LED behavior.
+	  The value will be stored to NonVolatile memory(NVM) and will persist across reboots.
+          0 = Original LED color scheme:
+                Bonded DS   = Green; non-bonded DS = Yellow
+                Bonded US   = Green; non-bonded US = Yellow
+                GigE/USB2.0 = Green; 10/100/USB1.x = Yellow
+          1 = Inverted LED color scheme:
+                Bonded DS   = Yellow; non-bonded DS = Green
+                Bonded US   = Yellow; non-bonded US = Green
+                GigE/USB2.0 = Yellow; 10/100/USB1.x = Green
+
+         Gateway devices with multiple Ethernet ports do not support Yellow for the front panel
+	  GigE LED. The Green color indicates one or more connections of any speed. The rear Ethernet
+	  LEDs adjacent to their respective RJ45 ports properly indicate connection speed with
+	  different colors."
+    ::= { arrisCmDoc30Setup 13 }
+
+arrisCmDoc30SetupTurboDoxEnable OBJECT-TYPE
+     SYNTAX TruthValue
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+         "This object is used to enable/disable TurboDox operation.
+          Set to true(1) to enable TurboDox operation mode.
+          Set to false(2) to disable TurboDox operation mode.  This
+          object can only be changed by the configuration file."
+     DEFVAL { true }
+     ::= { arrisCmDoc30Setup 14 }
+
+arrisCmDoc30SetupMdfSupportOverride OBJECT-TYPE
+     SYNTAX INTEGER {
+        disable(0),
+        enable(1)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+          "This object is used to override MDF Support in CMTS REG-RSP value and disabling MDF Support.
+          0 = disable, use value CMTS sets
+          1 = enable, force MDF Support to be disabled"
+    ::= { arrisCmDoc30Setup 15 }
+
+arrisCmDoc30SetupAdvancedWebPageAccess OBJECT-TYPE
+     SYNTAX INTEGER {
+   	none 	      (0),
+	lan-access    (1),
+	wan-access    (2),
+	wan-lan-access (3)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+         "This object is used to enable/disable access to the Advanced web page.
+          To disable all access set value to (0)
+          To enable LAN  access set value to (1)
+	  To enable WAN   access set value to (2)
+	  To enable both access set value to (3)"
+         ::= { arrisCmDoc30Setup 16 }
+
+arrisCmDoc30SetupReducedOORThreshold OBJECT-TYPE
+     SYNTAX      INTEGER {
+     disable (0),
+     enable  (1)
+     }
+     MAX-ACCESS  read-write
+     STATUS      current
+     DESCRIPTION
+         "This mib controls the number Out-Of-Range packets the modem wiil discard and the
+	 minimum time it will wait before it re-syncs the 'Next Expected Packet Sequence
+	 Number' with the CMTS.
+         When enabled, the packet threshold is set to 3 and the timeout to 1 second.
+         When disabled, the threshold is set to 1000 packets and the timeout to 2 minutes
+	 per the Mulpi Specification"
+     DEFVAL { 0 }
+     ::= { arrisCmDoc30Setup 17 }
+
+arrisCmDoc30SetupPowerSaveMode OBJECT-TYPE
+     SYNTAX      INTEGER {
+     partialservice (0),
+     reinitmac      (1),
+     keepallusds    (2)
+     }
+     MAX-ACCESS  read-write
+     STATUS      current
+     DESCRIPTION
+         "This mib controls the method used for power save mode.
+         When set to reinitmac, PowerSaveMode will trigger a mac reinit to 1x1 unbonded,
+         and exit from PowerSaveMode will trigger another mac reinit to MxN bonded mode.
+         When set to partialservice, PowerSaveMode will not reinitialize the mac, but
+         will issue CM-STATUS messages to the CMTS reporting partial service when powering
+         down the secondary channels.
+         When set to keepallusds, PowerSaveMode will keep all upstream and downstream
+         channels unchanged."
+     DEFVAL { 0 }
+     ::= { arrisCmDoc30Setup 18 }
+
+arrisCmDoc30SetupPowerSaveOption OBJECT-TYPE
+     SYNTAX      INTEGER {
+     maxupstream (0),
+     maxbattery  (1)
+     }
+     MAX-ACCESS  read-write
+     STATUS      current
+     DESCRIPTION
+         "When set to maxbattery, the modem will be configured to maximize battery hold
+	 up time during AC power failure.  In this mode the modem will not support
+	 synchronous upstreams, such as SCDMA.  When set to maxupstream the modem will
+	 support all upstream types but the battery hold up time will be reduced, even
+	 when not registered on a synchronous upstream.  If this MIB value is altered
+	 the modem will reboot automatically after the change is applied."
+     ::= { arrisCmDoc30Setup 19 }
+
+arrisCmDoc30SetupKeepCpeOnIfDisconnect OBJECT-TYPE
+     SYNTAX      INTEGER {
+     disable (0),
+     enable  (1)
+     }
+     MAX-ACCESS  read-write
+     STATUS      current
+     DESCRIPTION
+         "When enabled, the CPE mac address will remain in the cpe table when the interface
+	 is disconnected."
+     DEFVAL { 0 }
+     ::= { arrisCmDoc30Setup 20 }
+
+arrisCmDoc30SetupPowerSaveWifiShutdownOnly OBJECT-TYPE
+     SYNTAX      INTEGER {
+     disable (0),
+     enable  (1)
+     }
+     MAX-ACCESS  read-write
+     STATUS      current
+     DESCRIPTION
+         "When enabled, Gateway products will not power down the entire gateway, but
+	 just the WiFi radio.  This will allow the wired ethernet to remain active.
+	 When disabled (default), the entire gateway including wired ethernet will be
+	 powered down"
+     DEFVAL { 0 }
+     ::= { arrisCmDoc30Setup 21 }
+
+arrisCmDoc30SetupTODSyncTimeout OBJECT-TYPE
+     SYNTAX      Gauge32
+     MAX-ACCESS  read-write
+     STATUS      current
+     DESCRIPTION
+         "This value determines the interval between the TOD sync operations.
+          Range is 0-4320 hours, where 0 disables the sync completely.
+      This value sets the interval starting from the setting of the new value.
+      Hence a setting of 10 causes the TOD server to sync every 10 hours from the time the value was set
+      Feature is disable by default"
+     DEFVAL { 0 }
+     ::= { arrisCmDoc30Setup 22 }
+
+arrisCmDoc30SetupSWDLFilenameCheckOverride OBJECT-TYPE
+     SYNTAX INTEGER {
+        disable(0),
+        enable(1)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+     "This MIB when enabled will allow the modem to accept and download a new image that
+      has the same filename as the previous download.  By default this MIB is disabled
+      to prevent an automated provisioning system from downloading an image the modem has already
+      received.  This override only affects docsDevSwAdminStatus initiated upgrades using
+      upgradeFromMgt, using allowProvisioningUpgrade and identical filenames is still blocked."
+     DEFVAL { 0 }
+     ::= { arrisCmDoc30Setup 23 }
+
+arrisCmDoc30SetupEthernetLinkBounce OBJECT-TYPE
+     SYNTAX INTEGER {
+        disable(0),
+        enable(1)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+     "This MIB when enabled will add an additional step to the T4 DOCSIS MAC reinitialization sequence.
+      In addition to the normal DOCSIS MAC reinitilization, this MIB will force the modem to briefly take
+      down the ethernet link between the modem and the CPE, which may be useful to cause the attached
+      customer CPE to drop its IP address and restart its DHCP process."
+     DEFVAL { 0 }
+     ::= { arrisCmDoc30Setup 24 }
+
+arrisCmDoc30SetupIgnoreMddSymbolClockIndicator OBJECT-TYPE
+     SYNTAX INTEGER {
+        disable(0),
+        enable(1)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+     "When enabled, the cable modem will ignore the Symbol Clock Locking Indicator TLV in the MDD message and
+     always use asynchronous timing mode.  In this mode, the cable modem will not lock to the downstream symbol
+     clock on its Primary Downstream Channel.  It will acquire the synchronization timebase to be used for the
+     upstream burst timing from the SYNC messages.
+     When disabled, the cable modem will follow the timing mode specified by the Symbol Clock Indicator TLV in
+     the MDD message."
+     DEFVAL { 1 }
+     ::= { arrisCmDoc30Setup 25 }
+
+arrisCmDoc30SetupTCPAckSuppression OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION "Set to true to enable TCP Ack suppression.  Set to false to disable the feature"
+	DEFVAL { true }
+    ::= { arrisCmDoc30Setup 26 }
+
+arrisCmDoc30SetupL2VPNPromiscuousMode OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION "Set to true(1) to enable L2VPN promiscuous mode.  When in promiscuous mode all
+    upstream and downstream L2VPN traffic will be bridged by the CM regardless of source or
+    destination MAC address.  Learned MAC addresses from L2VPN traffic will not be added to the
+    CPE table.  Set to false(2) to disable the feature.  When set to false all unknown
+    (i.e. previously unlearned) unicast and broadcast L2VPN traffic will be processed in accordance
+    with the DOCSIS MULPI specification as required by the BSoD L2VPN specification."
+	DEFVAL { false }
+    ::= { arrisCmDoc30Setup 27 }
+
+arrisCmDoc30SetupTftpBlkSize OBJECT-TYPE
+    SYNTAX      Integer32 (64..65464)
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION "This object is used for the TFTP Blocksize Option (RFC 2348).
+    Valid values range between 64 and 65464 octets, inclusive.
+    If this object is set to 0,default block size of 1428 for ipv6 connection
+    and block size of 1448 for ipv4 connections will be used. This mib is applicable for
+    only firmware downloads.
+    Note : Changing the value of this mib to too high or too low may affect tftp performance"
+    ::= { arrisCmDoc30Setup 28 }
+
+arrisCmDoc30SetupTftpTimeout OBJECT-TYPE
+    SYNTAX      Integer32 (0..255)
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION "This object is used for the TFTP Timeout Option (RFC 2349).
+    Valid values range between 1 and 255, inclusive.
+    Setting this object to 0(default) disables this option.
+    When the smart download(arrisCmDoc30EsafeSmartDownloadMode) is enabled
+    then the fixed timeout value will be used by the tftp client.This mib is applicable for
+    only firmware downloads"
+    ::= { arrisCmDoc30Setup 29 }
+
+arrisCmDoc30SetupExtendSwCurrentVersEnable OBJECT-TYPE
+   SYNTAX INTEGER {
+        disable(0),
+        enable(1)
+     }
+   MAX-ACCESS read-write
+   STATUS      current
+   DESCRIPTION
+   "When enabled, the Firmware version displayed in the MIB docsDevSwCurrentVers will be in the format of '<eMTA Model>-<firmware version>'.
+   If disabled, the MIB docsDevSwCurrentVers will be displayed in normal format of '<firmware version>"
+   DEFVAL {0}
+   ::= { arrisCmDoc30Setup 30 }
+
+arrisCmDoc30SetupT4timeoutRebootEnable OBJECT-TYPE
+    SYNTAX TruthValue
+    MAX-ACCESS read-write
+    STATUS current
+    DESCRIPTION
+        "This object is used to enable/disable unit reboot upon T4 timeout.
+         If it is set true(1), unit will reboot upon receipt of a T4 message.
+         If it is set false (2), this feature is disabled."
+    DEFVAL { false }
+    ::= { arrisCmDoc30Setup 31 }
+
+arrisCmDoc30SetupExtendedUpstreamTransmitPowerValue OBJECT-TYPE
+    SYNTAX      Integer32 (0|205..244)
+    MAX-ACCESS read-write
+    STATUS      current
+    DESCRIPTION
+      "When enabled, extended upstream transmit power capabilities will be reported in REG-REQ-MP
+      message.  Setting to 0 disables this functionality. Setting to nonzero controls what Pmax
+      the modem advertises in 0.25dB steps. The default value is hardware-specific.
+
+      It is not recommended to change from default values. Exceeding the capabilities of the upstream
+      amplifier may introduce distortions and spurs which may decrease SNR of this upstream channel and
+      adjacent upstream channels. Please refer to the Firmware Guide and take care when setting this value."
+    ::= { arrisCmDoc30Setup 32 }
+
+arrisCmDoc30SetupRCPBypass OBJECT-TYPE
+    SYNTAX INTEGER {
+        disable(0),
+        enable(1),
+        default(2)
+    }
+    MAX-ACCESS read-write
+    STATUS current
+    DESCRIPTION
+        "This object is used to enable/disable RCP check bypass feature.
+         If it is set to disable (0), RCP check bypass feature is disabled.
+         If it is set to enable (1), RCP check bypass feature is enabled.
+         If it is set to default (2), RCP check bypass feature is disabled and follow
+         the setting in cm config file.
+         Setting via SNMP is persistent, and will override the setting in cm config file
+         if it is set to enable (1) or disable (0), will follow the setting in cm config
+         file if it is set to default (2).
+         Setting via cm config file is not persistent."
+    DEFVAL { 2 }
+    ::= { arrisCmDoc30Setup 33 }
+
+arrisCmDoc30Setup6rdPPSupport OBJECT-TYPE
+    SYNTAX TruthValue
+    MAX-ACCESS read-write
+    STATUS current
+    DESCRIPTION
+        "This object is used to enable/disable 6RD (protocol 41) PP support.
+         If it is set true(1), unit will allow 6RD (protocol 41)
+         packet passing through the packet processor.
+         If it is set false (2), this feature is disabled."
+    DEFVAL { false }
+    ::= { arrisCmDoc30Setup 34 }
+
+arrisCmDoc30SetupT4EvCtrl OBJECT-TYPE
+    SYNTAX INTEGER {
+        every30s(0),
+        once(1)
+    }
+    MAX-ACCESS read-write
+    STATUS current
+    DESCRIPTION
+        "When an upstream is impaired, no ranging opportunities are provided for that
+         upstream channel, modem would send the T4 timeout every 30s. In this situation,
+         there will be excessive T4 timeout events sent to the syslog server.
+
+         This MIB is used to control whether to send T4 timeout event when the modem
+         is in upstream partial service mode.
+         If the MIB is set to once, T4 timeout event is sent only when the status of one
+         upstream is changed from in-service to impaired.
+         If the MIB is set to every30s, T4 timeout event is sent every 30s when one upstream
+         is impaired."
+    DEFVAL { 0 }
+    ::= { arrisCmDoc30Setup 35 }
+
+arrisCmDoc30SetupExpandedBondingKey OBJECT-TYPE
+    SYNTAX DisplayString
+     MAX-ACCESS  read-write
+     STATUS      current
+     DESCRIPTION
+         "This mib is used to set a key that enables bonding additional DS channels for certain modem models.
+         When the value in the CM configuration file contains a valid license key, the CM will allow bonding
+         additional DS channels beyond its default capability.  The arrisCmDoc30BondingModeCapability
+         MIB can be used to read the current DS bonding capability.
+         When the key does not match or is not present in the CM configuration file, the CM will support its
+         default DS channel bonding capability.
+         If the value in the CM configuration file represents a change in value from the previous
+         registration, the modem will reboot to apply the change."
+     ::= { arrisCmDoc30Setup 36 }
+
+arrisCmDoc30BondingModeCapability OBJECT-TYPE
+     SYNTAX      DisplayString
+     MAX-ACCESS   read-only
+     STATUS      current
+     DESCRIPTION
+         "This mib shows the number of downstream channels the modem is capable of bonding for certain modem type.
+         If arrisCmDoc30SetupExpandedBondingKey is absent or invalid, and modem supports this feature,  shipped number of DS is returned.
+         If arrisCmDoc30SetupExpandedBondingKey is present and valid, and modem supports this feature,  current number of DS is returned.
+         If the modem does not support this feature, unknown is returned"
+     ::= { arrisCmDoc30Setup 37 }
+
+arrisCmDoc30SetupIgnoreMtaDnsRDValidation OBJECT-TYPE
+	SYNTAX INTEGER {
+		disable(0),
+		enable(1)
+	}
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"When enabled, the device's MTA provisioning subsystem will ignore the validation of the RD flag in the DNS response.
+		 Value is not persistent and must be in CM config file."
+	DEFVAL { 0 }
+	::= { arrisCmDoc30Setup 38 }
+
+arrisCmDoc30SetupTimeoffsetWrapper OBJECT-TYPE
+    SYNTAX INTEGER {
+        disable(0),
+        enable(1),
+        default(2)
+    }
+    MAX-ACCESS read-write
+    STATUS current
+    DESCRIPTION
+        "This object is used to enable/disable Timeoffset Wrapper feature.
+         If it is set to disable (0), Timeoffset Wrapper feature is disabled.
+         If it is set to enable (1), Timeoffset Wrapper feature is enabled.
+         If it is set to default (2), Timeoffset Wrapper feature is disabled and follow
+         the setting in cm config file.
+         Setting via SNMP is persistent. It will override the setting in cm config file
+         if it is set to enable (1) or disable (0). It will follow the setting in cm config
+         file if it is set to default (2).
+         Setting via cm config file is not persistent."
+    DEFVAL { 2 }
+    ::= { arrisCmDoc30Setup 39 }
+
+arrisCmDoc30SetupDownstreamScanMaskEnable OBJECT-TYPE
+	 SYNTAX INTEGER {
+		 disable(0),
+		 enable(1)
+	 }
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"This object is just available for CM820B/AU product to enable/disable CM downstream scan mask."
+	DEFVAL { 0 }
+	::= { arrisCmDoc30Setup 40 }
+
+arrisCmDoc30EtherEnergyEfficientEnable OBJECT-TYPE
+    SYNTAX INTEGER {
+        disable(0),
+        enable(1)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+     "This object controls Energy Efficient Ethernet of Ethernet Interface. Disabled by default."
+     ::= { arrisCmDoc30Setup 41 }
+
+arrisCmDoc30SetupSwdlOperationalMode OBJECT-TYPE
+     SYNTAX INTEGER {
+         afterOper(1),
+         beforeOper(2)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+        "This object is used to control software download (SWDL) starts after/before the modem is operational.
+         afterOper  (1), SWDL will start after the CM is operational.
+         beforeOper (2), The CM will not move to operational state before SWDL ended.
+         For the LGI VM modems, the default value is afterOper (1).
+         For the other modems, the default value is beforeOper (2)."
+     ::= { arrisCmDoc30Setup 42 }
+
+-- BROADCOM MIB Definitions --
+arrisCmDoc30MulticastDSIDForwarding OBJECT-TYPE
+
+     SYNTAX TruthValue
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+         "This object is used to specify the DOCSIS 3.0 multicast DSID (Downstream Service Identifier) forwarding value.
+          Set to true(1) to enable Multicast DSID forwarding.
+          Set to false(2) to disable Multicast DSID forwarding.
+          To immediately affect any changes to this variable, this device must be reset.
+          To reset the device set the SNMP OID: docsDevResetNow to true(1)."
+     DEFVAL { true }
+         ::= { arrisCmDoc30Setup 200 }
+
+arrisCmDoc30MgErouterForwarding OBJECT-TYPE
+
+     SYNTAX TruthValue
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+         "This object is used to specify the eRouter forwarding value.
+          Set to true(1) to enable eRouter forwarding.
+          Set to false(2) to disable eRouter forwarding."
+     DEFVAL { true }
+         ::= { arrisCmDoc30Setup 201 }
+
+
+arrisCmDoc30MgEnabledInterfaces OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION "An integer representing a bitmask that specifies which interfaces are enabled.  This ONLY applies to the Media Gateway with a split architecture where the CM and eRouter run on different processors.
+                This applies to the CM processor ONLY.
+                 0x00001  -- DOCSIS CM HAL
+                 0x00002  -- Ethernet HAL
+                 0x00004  -- HPNA HAL
+                 0x00008  -- USB HAL
+                 0x00010  -- IP Stack 1 HAL
+                 0x00020  -- IP Stack 2 HAL
+                 0x00040  -- IP Stack 3 HAL
+                 0x00080  -- IP Stack 4 HAL
+                 0x00100  -- Davic HAL
+                 0x00200  -- PCI HAL
+                 0x00400  -- Bluetooth HAL
+                 0x00800  -- 802.11 HAL
+                 0x01000  -- PacketGenerator HAL
+                 0x02000  -- IP Stack 5 HAL
+                 0x04000  -- IP Stack 6 HAL
+                 0x08000  -- IP Stack 7 HAL
+                 0x10000  -- IP Stack 8 HAL
+                 0x20000  -- WAN Ethernet HAL
+                 0x40000  -- SCB HAL
+                 0x80000  -- MOCA HAL"
+    ::= { arrisCmDoc30Setup 202 }
+
+
+arrisCmDoc30MgEnabledInterfacesString OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION "An string which describes the enabled interfaces.
+                This ONLY applies to the Media Gateway with a split architecture where the CM and eRouter run on different processors.
+                This applies to the CM processor ONLY."
+    ::= { arrisCmDoc30Setup 203 }
+
+arrisCmDoc30MgFactoryAllowLEDControl OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION "This must be set to true -- via the CM config file -- to allow factory control of the LEDs via SNMP.
+                If this value is false, the OID: arrisCmDoc30MgFactoryControlLEDs will NOT work.  This value does NOT persist. This OID is specific to the MG product only."
+    DEFVAL { false }
+    ::= { arrisCmDoc30Setup 204 }
+
+
+arrisCmDoc30MgFactoryControlLEDs OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION "An integer representing a bitmask that allows control of LEDs for factory use only.  The OID: arrisCmDoc30MgFactoryAllowLEDControl must be set to 'true' to enable this OID.
+                This OID is specific to the MG product only.
+                1==Battery LED on
+                2==Battery LED flash
+                4==VOIP LED1 on
+                8==VOIP LED1 flash
+                16==VOIP LED2 on
+                32==VOIP LED2 flash.
+                Multiple LEDs can be turned on or flashed at the same time by OR-ing the values.  i.e. Set to 5 to turn on battery LED and VOIP LED1, 21==all LEDs on, 42==flash all LEDs.
+                However, a single LED cannot be configured to 'on' and 'flash' simultaneously. i.e. 3 is an illegal value."
+    ::= { arrisCmDoc30Setup 205 }
+
+
+
+
+arrisCmDoc30IPAddressTable OBJECT-TYPE
+     SYNTAX      SEQUENCE OF ArrisCmDoc30IPAddressEntry
+     MAX-ACCESS  not-accessible
+     STATUS      current
+     DESCRIPTION "This table contains IP Addresses for the MG product"
+    ::= { arrisCmDoc30Setup 206 }
+
+arrisCmDoc30IPAddressEntry OBJECT-TYPE
+    SYNTAX      ArrisCmDoc30IPAddressEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION "This table contains IP Addresses for the MG product"
+    INDEX   { arrisCmDoc30IPAddressIndex }
+    ::= { arrisCmDoc30IPAddressTable 1 }
+
+ArrisCmDoc30IPAddressEntry ::=
+    SEQUENCE    {
+                arrisCmDoc30IPAddressIndex          Integer32,
+                arrisCmDoc30IPAddressType           InetAddressType,
+                arrisCmDoc30IPAddress               InetAddress,
+                arrisCmDoc30IPAddressAsString       DisplayString,
+                arrisCmDoc30IPAddressMacAddr        MacAddress,
+                arrisCmDoc30IPAddressDesc           DisplayString
+                }
+
+arrisCmDoc30IPAddressIndex OBJECT-TYPE
+     SYNTAX      Integer32 (1..32)
+     MAX-ACCESS  not-accessible
+     STATUS      current
+     DESCRIPTION "Index used to order the arrisCmDoc30IPAddressTable entries."
+     ::= { arrisCmDoc30IPAddressEntry 1 }
+
+arrisCmDoc30IPAddressType OBJECT-TYPE
+     SYNTAX InetAddressType
+     MAX-ACCESS read-only
+     STATUS current
+     DESCRIPTION "This displays the type of the IP address ."
+     ::= { arrisCmDoc30IPAddressEntry 2 }
+
+arrisCmDoc30IPAddress OBJECT-TYPE
+     SYNTAX InetAddress
+     MAX-ACCESS read-only
+     STATUS current
+     DESCRIPTION "This displays the IP address ."
+     ::= { arrisCmDoc30IPAddressEntry 3 }
+
+arrisCmDoc30IPAddressAsString OBJECT-TYPE
+     SYNTAX DisplayString
+     MAX-ACCESS read-only
+     STATUS current
+     DESCRIPTION "The IP address as a human-readable string"
+     ::= { arrisCmDoc30IPAddressEntry 4 }
+
+arrisCmDoc30IPAddressMacAddr OBJECT-TYPE
+     SYNTAX MacAddress
+     MAX-ACCESS read-only
+     STATUS current
+     DESCRIPTION "MAC address associated with the IP address"
+     ::= { arrisCmDoc30IPAddressEntry 5 }
+
+arrisCmDoc30IPAddressDesc OBJECT-TYPE
+     SYNTAX DisplayString
+     MAX-ACCESS read-only
+     STATUS current
+     DESCRIPTION "Description of the IP address"
+     ::= { arrisCmDoc30IPAddressEntry 6 }
+
+
+arrisCmDoc30DsgTimeoutAction OBJECT-TYPE
+     SYNTAX      INTEGER {
+     doNothing       (0),
+     rescan          (1),
+     resetVideoProc  (2),
+     resetSystem     (3)
+     }
+     MAX-ACCESS  read-write
+     STATUS      current
+     DESCRIPTION
+         "This mib controls the action to execute when DSG timeout"
+     DEFVAL { 0 }
+     ::= { arrisCmDoc30Setup 207 }
+
+-- Linux APP image download --
+arrisCmDoc30AppSoftware  OBJECT IDENTIFIER ::= { arrisCmDoc30Setup 208 }
+
+-- arrisCmDoc30AppSoftware MIB objects --
+
+arrisCmDoc30AppSwServerAddress OBJECT-TYPE
+     SYNTAX IpAddress
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+		 "This displays the current SW Server IP address in use."
+     ::= { arrisCmDoc30AppSoftware 1 }
+
+arrisCmDoc30AppSwServerAddressType OBJECT-TYPE
+     SYNTAX InetAddressType
+     MAX-ACCESS read-only
+     STATUS current
+     DESCRIPTION "This displays the type of the IP address ."
+     ::= { arrisCmDoc30AppSoftware 2 }
+
+arrisCmDoc30AppSwFilename OBJECT-TYPE
+      SYNTAX     DisplayString
+      MAX-ACCESS read-write
+      STATUS     current
+      DESCRIPTION
+      "The name of the signed Jungo image."
+      ::= { arrisCmDoc30AppSoftware 3}
+
+
+arrisCmDoc30AppSwImageType OBJECT-TYPE
+     SYNTAX INTEGER {
+         nds-image(1),
+         fs-image(2)
+     }
+     MAX-ACCESS  read-write
+     STATUS      current
+     DESCRIPTION
+         "If set to nds-image(1), the device will initiate a
+          TFTP software image download using arrisCmDoc30AppSwFilename for
+          a nds-image.
+
+          If set to fs-image(2), the device will initiate a
+          TFTP software image download using arrisCmDoc30AppSwFilename for
+          a fs-image.
+
+          At initial startup, this object has the default value of
+          nds-image(1)."
+     ::= { arrisCmDoc30AppSoftware 4 }
+
+arrisCmDoc30AppSwAdminStatus OBJECT-TYPE
+     SYNTAX INTEGER {
+         upgrade(1),
+         upgrade-and-reboot(2),
+         complete(3)
+     }
+     MAX-ACCESS  read-write
+     STATUS      current
+     DESCRIPTION
+         "If set to upgrade(1), the device will initiate a
+          TFTP software image download using arrisCmDoc30AppSwFilename.
+          After successfully receiving an image, the device will set
+ 	  its state to complete(3).
+
+          If set to upgrade-and-reboot(2), the device will initiate a
+          TFTP software image download using arrisCmDoc30AppSwFilename.
+          After successfully receiving an image, the device will reboot."
+
+     ::= { arrisCmDoc30AppSoftware 5 }
+
+arrisCmDoc30AppSwOperStatus OBJECT-TYPE
+     SYNTAX INTEGER {
+         inProgress(1),
+         failed(2),
+         incorrectCRC(3),
+	 incorrectType(4),
+	 other(5)
+     }
+     MAX-ACCESS  read-only
+     STATUS      current
+     DESCRIPTION
+         "inProgress(1) indicates that a TFTP download is
+          currently underway.
+
+          failed(2) indicates that the last attempted download
+          failed.
+
+          incorrectCRC(3) indicates that the image to download has either a bad CRC.
+
+          incorrectType(4) indicate tjat arrisMgSwImageType doesn't match with HW.
+
+          other(5) indicates default state when arrisMgSw* is not used."
+
+     ::= { arrisCmDoc30AppSoftware 6 }
+
+-- Group which implements CM spectrum analysis for devices which are capable of
+-- supporting this feature
+
+arrisCmDoc30Spectrum OBJECT IDENTIFIER ::= { arrisCmDoc30Setup  209 }
+
+arrisCmDoc30SpectrumMeasurementTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF ArrisCmDoc30SpectrumMeasurementEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "This table provides a list of spectral analysis measurements as
+         performed across a range of center frequencies.  The table is capable
+         of representing a full scan of the spectrum."
+    ::= { arrisCmDoc30Spectrum 1 }
+
+arrisCmDoc30SpectrumMeasurementEntry OBJECT-TYPE
+    SYNTAX      ArrisCmDoc30SpectrumMeasurementEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "Each row in the arrisCmDoc30SpectrumMeasurementTable represents the
+         spectral analysis around a single center frequency point in the
+         spectrum."
+    INDEX { arrisCmDoc30SpectrumFrequency }
+    ::= { arrisCmDoc30SpectrumMeasurementTable 1 }
+
+ArrisCmDoc30SpectrumMeasurementEntry ::=
+    SEQUENCE    {
+                arrisCmDoc30SpectrumFrequency      Integer32,
+                arrisCmDoc30SpectrumAmplitudeData  AmplitudeData
+    }
+arrisCmDoc30SpectrumFrequency OBJECT-TYPE
+     SYNTAX      Integer32
+     MAX-ACCESS  not-accessible
+     STATUS      current
+     DESCRIPTION
+         "This object indicates the center frequency of the spectral anaysis
+          span which is represented by this entry."
+     ::= { arrisCmDoc30SpectrumMeasurementEntry 1 }
+
+arrisCmDoc30SpectrumAmplitudeData OBJECT-TYPE
+     SYNTAX      AmplitudeData
+     MAX-ACCESS  read-only
+     STATUS      current
+     DESCRIPTION
+         "This object provides a list of the spectral amplitudes as measured at
+          the center frequency specified by arrisCmDoc30SpectrumFrequency.
+
+          The frequency bins are ordered from lowest to highest frequencies
+          covering the frequency span. Information about the center frequency,
+          frequency span, number of bins and resolution bandwidth are included
+          to provide context to the measurement point.
+
+          The number of bins will always be an odd number in order to provide a
+          spectrum representation that is symmetric about the middle data point
+          or bin."
+     ::= { arrisCmDoc30SpectrumMeasurementEntry 2 }
+
+arrisCmDoc30SpectrumEnable OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "This object is used to enable or disable the spectrum analyzer feature.
+         By default, the feature is disabled unless explicitly enabled.
+
+         Note that the feature may be disabled by the system under certain
+         circumstances if the spectrum analyzer would affect critical services.
+         In such a case, the object will return 'false' when read, and will
+         reject sets to 'true' with an 'inconsistenValue' error."
+    DEFVAL { false }
+    ::= { arrisCmDoc30Spectrum 2 }
+
+arrisCmDoc30SpectrumInactivityTimeout OBJECT-TYPE
+    SYNTAX      INTEGER (0..86400)
+    UNITS       "seconds"
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "This object controls the length of time after the last spectrum
+         analysis measurement before the feature is automatically disabled.
+         If set to a value of 0, the feature will remain enabled until it is
+         explicitly disabled."
+    DEFVAL { 300 }
+    ::= { arrisCmDoc30Spectrum 3 }
+
+
+--
+
+arrisCmDoc30LNAGain OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION "An unsigned integer representing the various LNA Gain registers"
+    ::= { arrisCmDoc30Setup 210 }
+
+-- arrisCmDoc30EcmMode MIB objects --
+
+arrisCmDoc30EcmMode OBJECT-TYPE
+     SYNTAX INTEGER {
+        docsis(0),
+        normal(2),
+        voip(3)
+     }
+     MAX-ACCESS read-write
+    STATUS      current
+    DESCRIPTION "An unsigned integer representing the eCM operational mode
+    0 - Docsis Only Mode ( Behave like standalone cable modem. Primary used for
+    ATP & PHY testing )
+    2 - Normal Mode ( Support OOB & DSG )
+    3 - Voip Mode - the CM will range and register without DSG control when not in advanced DSG mode
+    At initial startup, this object has the default value of voip (3)."
+    ::= { arrisCmDoc30Setup 211 }
+
+-- arrisCmDoc30DisableDocsis MIB objects --
+
+arrisCmDoc30DisableDocsis OBJECT-TYPE
+    SYNTAX INTEGER {
+        enable(0),
+        disable (1)
+    }
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION "An unsigned integer representing the enable/disbale Docsis mode.
+    0 - Enable Docsis Mode
+    1 - Disable Docsis Mode
+    This OID can only be used within an MG platform and will not work from an external source.
+    At initial startup, this object has the default value of enable(0).
+    The modem must be rebooted after the change is applied."
+    ::= { arrisCmDoc30Setup 212 }
+
+
+arrisCmDoc30SpecialReboot OBJECT-TYPE
+    SYNTAX INTEGER {
+        reboot(1)
+    }
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION "This OID is used to trigger a docsDevResetNow in any mode from the application processor (i.e. 3320).
+                It will work when in a 'bring-your-own-Internet' -- Ethernet-WAN mode.
+                It also updates a status variable that can be read from arrisCmDoc30RebootStatus to verify that the reset has occurred."
+    ::= { arrisCmDoc30Setup 213 }
+
+arrisCmDoc30RebootStatus OBJECT-TYPE
+    SYNTAX INTEGER {
+        freshReboot(0),
+        pendingReboot(1)
+    }
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION "This OID always returns 0 after a boot and in all cases except after arrisCmDoc30SpecialReboot has been set to reboot.
+                This is used to verify that the device has been reset."
+    ::= { arrisCmDoc30Setup 214 }
+
+arrisCmDoc30DiplexerControl OBJECT-TYPE
+    SYNTAX     INTEGER {
+        band0(0),
+        band1(1)
+    }
+    MAX-ACCESS read-write
+    STATUS     current
+    DESCRIPTION
+      "This object allows the user to retrieve/set Diplexer.
+            Band0 = 0
+            Band1 = 1
+       The frequency ranges of band0 and band1 can be retrieved by
+       arrisCmDoc30DiplexerFreqencyRanges.
+       A manual reset is required for the changes to take effect."
+    ::= { arrisCmDoc30Setup 215 }
+
+
+
+arrisCmDoc30SetupLPCMEnable   OBJECT-TYPE
+    SYNTAX TruthValue
+    MAX-ACCESS read-write
+    STATUS current
+    DESCRIPTION "Enable or Disable LPCM feature."
+    ::= { arrisCmDoc30Setup 216 }
+
+arrisCmDoc30SetupLPCM1x1Status    OBJECT-TYPE
+    SYNTAX INTEGER {
+              none(0),
+              lpcmMode(1)
+           }
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION "Current status of LPCM."
+    ::= { arrisCmDoc30Setup 217 }
+
+arrisCmDoc30SetupLPCM1x1Force    OBJECT-TYPE
+    SYNTAX TruthValue
+    MAX-ACCESS read-write
+    STATUS current
+    DESCRIPTION "Enable/Disable Force mode. Forced low power consumption when CMTS does not support EM feature."
+    ::= { arrisCmDoc30Setup 218 }
+
+
+arrisCmDoc30DiplexerFreqencyRanges OBJECT-TYPE
+        SYNTAX     DisplayString
+        MAX-ACCESS read-only
+        STATUS     current
+        DESCRIPTION
+          "This object displays the upstream and downstream frequency ranges of band0 and band1."
+        ::= { arrisCmDoc30Setup 219 }
+
+-- arrisCmDoc30DhcpLeaseParameters MIB objects --
+
+arrisCmDoc30DhcpOfferedLeaseTime OBJECT-TYPE
+     SYNTAX Integer32
+     MAX-ACCESS read-only
+     STATUS current
+     DESCRIPTION
+         "This displays the Offered IP Lease time expressed in seconds."
+     ::= { arrisCmDoc30DhcpLeaseParameters 1 }
+
+arrisCmDoc30DhcpTimeUntilRenew OBJECT-TYPE
+     SYNTAX Integer32
+     MAX-ACCESS read-only
+     STATUS current
+     DESCRIPTION
+         "This displays the current time remaining before the MTA starts the lease renewal
+          process.  This time is expressed in seconds."
+     ::= { arrisCmDoc30DhcpLeaseParameters 2 }
+
+arrisCmDoc30DhcpTimeUntilRebind OBJECT-TYPE
+     SYNTAX Integer32
+     MAX-ACCESS read-only
+     STATUS current
+     DESCRIPTION
+         "This displays the current time remaining before the CM starts the lease rebinding
+          process.  This time is expressed in seconds."
+     ::= { arrisCmDoc30DhcpLeaseParameters 3 }
+
+arrisCmDoc30DhcpLeaseTimeRemaining OBJECT-TYPE
+     SYNTAX Integer32
+     MAX-ACCESS read-only
+     STATUS current
+     DESCRIPTION
+                 "This displays the Remaining IP Lease time expressed in seconds."
+     ::= { arrisCmDoc30DhcpLeaseParameters 4 }
+
+-- arrisCmDoc30DhcpSvrParameters MIB objects --
+
+arrisCmDoc30DhcpState OBJECT-TYPE
+     SYNTAX INTEGER {
+        init-selecting  (0),
+        requesting      (1),
+        bound           (2),
+        renewing        (3),
+        rebinding       (4),
+        init-reboot     (5),
+        renew-requested (6),
+        released        (7)
+     }
+     MAX-ACCESS read-only
+     STATUS current
+     DESCRIPTION
+         "This displays the current Dhcp state of the CM."
+     ::= { arrisCmDoc30DhcpSvrParameters 1 }
+
+arrisCmDoc30DhcpPrimaryDhcpServerIpAddr OBJECT-TYPE
+     SYNTAX IpAddress
+     MAX-ACCESS read-only
+     STATUS current
+     DESCRIPTION
+		 "This displays the primary Dhcp server address."
+     ::= { arrisCmDoc30DhcpSvrParameters 2 }
+
+arrisCmDoc30DhcpTftpSvrIpAddr OBJECT-TYPE
+     SYNTAX IpAddress
+     MAX-ACCESS read-only
+     STATUS current
+     DESCRIPTION
+		 "This displays the current Tftp Server IP address in use."
+     ::= { arrisCmDoc30DhcpSvrParameters 3 }
+
+arrisCmDoc30DhcpTimeSvrIpAddr OBJECT-TYPE
+     SYNTAX IpAddress
+     MAX-ACCESS read-only
+     STATUS current
+     DESCRIPTION
+		 "This displays the current Time server IP address in use."
+     ::= { arrisCmDoc30DhcpSvrParameters 4 }
+
+arrisCmDoc30DhcpCmTimeOffset OBJECT-TYPE
+     SYNTAX Integer32
+     MAX-ACCESS read-only
+     STATUS current
+     DESCRIPTION
+		 "This displays the current Time offset being used by the CM."
+     ::= { arrisCmDoc30DhcpSvrParameters 5 }
+
+arrisCmDoc30DhcpPrimaryTeleDhcpSvr OBJECT-TYPE
+     SYNTAX IpAddress
+     MAX-ACCESS read-only
+     STATUS current
+     DESCRIPTION
+		 "This displays the primary MTA Dhcp server address."
+     ::= { arrisCmDoc30DhcpSvrParameters 6 }
+
+arrisCmDoc30DhcpSecondaryTeleDhcpSvr OBJECT-TYPE
+     SYNTAX IpAddress
+     MAX-ACCESS read-only
+     STATUS current
+     DESCRIPTION
+		 "This displays the secondary MTA Dhcp server address."
+     ::= { arrisCmDoc30DhcpSvrParameters 7 }
+
+-- arrisCmDoc30DhcpCmParameters MIB objects --
+
+arrisCmDoc30DhcpCmIpAddrType OBJECT-TYPE
+     SYNTAX InetAddressType
+     MAX-ACCESS read-only
+     STATUS current
+     DESCRIPTION
+		 "This displays the type of the currently leased IP address ."
+     ::= { arrisCmDoc30DhcpCmParameters 1 }
+
+arrisCmDoc30DhcpCmIpAddr OBJECT-TYPE
+     SYNTAX InetAddress
+     MAX-ACCESS read-only
+     STATUS current
+     DESCRIPTION
+		 "This displays the currently leased IP address ."
+     ::= { arrisCmDoc30DhcpCmParameters 2 }
+
+arrisCmDoc30DhcpCmSubNetMask OBJECT-TYPE
+     SYNTAX IpAddress
+     MAX-ACCESS read-only
+     STATUS current
+     DESCRIPTION
+		 "This displays the current IP subnet mask in use."
+     ::= { arrisCmDoc30DhcpCmParameters 3 }
+
+arrisCmDoc30DhcpCmGatewayIpAddr OBJECT-TYPE
+     SYNTAX IpAddress
+     MAX-ACCESS read-only
+     STATUS current
+     DESCRIPTION
+		 "This displays the current IP gateway address in use."
+     ::= { arrisCmDoc30DhcpCmParameters 4 }
+
+arrisCmDoc30DhcpCmConfigFile OBJECT-TYPE
+     SYNTAX SnmpAdminString
+     MAX-ACCESS read-only
+     STATUS current
+     DESCRIPTION
+		 "This displays the CM configuration file to be retrived."
+     ::= { arrisCmDoc30DhcpCmParameters 5 }
+
+-- arrisCmDoc30DhcpMtaParameters MIB objects --
+
+arrisCmDoc30DhcpMtaOpt60Override OBJECT-TYPE
+     SYNTAX INTEGER {
+         disable(0),
+         enable(1)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+        "Used to enable/disable SIP advertisement in MTA DHCP Option60.
+         This MIB can only be set via the CM configuration file."
+     DEFVAL { 0 }
+     ::= { arrisCmDoc30DhcpMtaParameters 1 }
+
+-- arrisCmDoc30Software MIB objects --
+
+arrisCmDoc30SwTable OBJECT-TYPE
+     SYNTAX      SEQUENCE OF ArrisCmDoc30SwEntry
+     MAX-ACCESS  not-accessible
+     STATUS      current
+     DESCRIPTION
+         "This table contains all the MIB variables required for the
+          Touchstone Software Upgrade System."
+     ::= { arrisCmDoc30Software 1 }
+
+arrisCmDoc30SwEntry OBJECT-TYPE
+     SYNTAX      ArrisCmDoc30SwEntry
+     MAX-ACCESS  not-accessible
+     STATUS      current
+     DESCRIPTION
+         "This table contains all the MIB variables required for the
+          Touchstone Software Upgrade System."
+     INDEX { arrisCmDoc30SwIndex  }
+     ::= {  arrisCmDoc30SwTable 1 }
+
+ArrisCmDoc30SwEntry ::= SEQUENCE {
+         arrisCmDoc30SwIndex             INTEGER,
+         arrisCmDoc30SwCustomerLoadId    DisplayString,
+         arrisCmDoc30SwHwModel           DisplayString,
+         arrisCmDoc30SwHwRev             INTEGER,
+         arrisCmDoc30SwFilename          DisplayString,
+         arrisCmDoc30SwServerAddressType InetAddressType,
+         arrisCmDoc30SwServerAddress     InetAddress
+     }
+
+arrisCmDoc30SwIndex OBJECT-TYPE
+     SYNTAX      INTEGER (1..32)
+     MAX-ACCESS  not-accessible
+     STATUS      current
+     DESCRIPTION
+         "Index used to order the arrisCmDoc30SwTable entries."
+     ::= { arrisCmDoc30SwEntry 1 }
+
+arrisCmDoc30SwCustomerLoadId OBJECT-TYPE
+     SYNTAX      DisplayString (SIZE (0..64))
+     MAX-ACCESS  read-write
+     STATUS      current
+     DESCRIPTION
+         "Custom string to identify Touchstone Software Upgrade
+          load lineups.
+          (OPTIONAL)"
+     ::= { arrisCmDoc30SwEntry 2 }
+
+arrisCmDoc30SwHwModel OBJECT-TYPE
+     SYNTAX      DisplayString (SIZE (0..16))
+     MAX-ACCESS  read-write
+     STATUS      current
+     DESCRIPTION
+         "HW Model of Touchstone product to be downloaded.
+          (REQUIRED)"
+     ::= { arrisCmDoc30SwEntry 3 }
+
+arrisCmDoc30SwHwRev OBJECT-TYPE
+     SYNTAX      INTEGER (0..255)
+     MAX-ACCESS  read-write
+     STATUS      current
+     DESCRIPTION
+         "HW Revision of Touchstone product to be downloaded.
+          (OPTIONAL)"
+     ::= { arrisCmDoc30SwEntry 4 }
+
+arrisCmDoc30SwFilename OBJECT-TYPE
+     SYNTAX      DisplayString (SIZE (0..64))
+     MAX-ACCESS  read-write
+     STATUS      current
+     DESCRIPTION
+         "The file name of the Touchstone software image to be loaded
+          on to this device.
+          (REQUIRED)"
+     ::= { arrisCmDoc30SwEntry 5 }
+
+arrisCmDoc30SwServerAddressType OBJECT-TYPE
+     SYNTAX InetAddressType
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+         "The IP type (IPv4 or IPv6) of the TFTP server specified in
+	 arrisCmDoc30SwServerAddress.
+         (REQUIRED)"
+     ::= { arrisCmDoc30SwEntry 6 }
+
+arrisCmDoc30SwServerAddress OBJECT-TYPE
+     SYNTAX InetAddress
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+         "The IPv4 or IPv6 address of the TFTP server that will be used to
+	 download the Touchstone software image. Note that before setting
+	 this object, setting arrisCmDoc30SwServerAddressType to the
+	 appropriate value is required.
+         (REQUIRED)"
+     ::= { arrisCmDoc30SwEntry 7 }
+
+arrisCmDoc30SwAdminStatus OBJECT-TYPE
+     SYNTAX INTEGER {
+         upgradeFromArrisMgt(1),
+         allowArrisProvisioningUpgrade(2),
+         ignoreArrisProvisioningUpgrade(3)
+     }
+     MAX-ACCESS  read-write
+     STATUS      current
+     DESCRIPTION
+         "If set to upgradeFromArrisMgt(1), the device will initiate a
+          TFTP software image download using arrisCmDoc30SwFilename for
+          the matching HW model type and revision in the
+          arrisCmDoc30SwTable.
+
+          If set to allowArrisProvisioningUpgrade(2), the device will
+          use the Touchstone Software Upgrade information supplied by
+          the provisioning server when next rebooting (this does not
+          cause a reboot).
+
+          When set to ignoreArrisProvisioningUpgrade(3), the device
+          will disregard Touchstone Software Upgrade information from
+          the provisioning server.
+
+          At initial startup, this object has the default value of
+          ignoreArrisProvisioningUpgrade(3)."
+     ::= { arrisCmDoc30Software 2 }
+
+arrisCmDoc30SwOperStatus OBJECT-TYPE
+     SYNTAX INTEGER {
+         inProgress(1),
+         completeFromArrisProvisioning(2),
+         completeFromArrisMgt(3),
+	 failed(4),
+	 other(5)
+     }
+     MAX-ACCESS  read-only
+     STATUS      current
+     DESCRIPTION
+         "InProgress(1) indicates that a TFTP download is
+          currently underway.
+
+          CompleteFromProvisioning(2) indicates that the last
+          software upgrade was a result of version mismatch at
+          provisioning.
+
+          CompleteFromArrisMgt(3) indicates that the last software
+          upgrade was a result of setting arrisCmDoc30SwAdminStatus to
+          upgradeFromMgt.
+
+          Failed(4) indicates that the last attempted download
+          failed."
+     ::= { arrisCmDoc30Software 3 }
+
+arrisCmDoc30SwCvcStatus OBJECT-TYPE
+     SYNTAX INTEGER {
+         cvcNotIncluded(1),
+         cvcNotValidated(2),
+         cvcValidated(3)
+     }
+     MAX-ACCESS  read-only
+     STATUS      current
+     DESCRIPTION
+         "cvcNotIncluded indicates the modem did not receive a CVC
+	  via EFL, and will use the standard manufacturing CVC TLV.
+
+	  cvcNotValidated indicates the modem received a CVC via
+	  EFL, but the CVC is invalid.
+
+	  cvcValidated indicates the modem received a CVC via EFL,
+	  and it was able to validate the CVC."
+     ::= { arrisCmDoc30Software 4 }
+
+arrisCmDoc30SwCvc1 OBJECT-TYPE
+     SYNTAX      CvcString
+     MAX-ACCESS  read-write
+     STATUS      current
+     DESCRIPTION
+         "The first string of hex bytes forming the CVC. Reading
+	  from this MIB returns the entire CVC."
+     ::= { arrisCmDoc30Software 5 }
+
+arrisCmDoc30SwCvc2 OBJECT-TYPE
+     SYNTAX      CvcString
+     MAX-ACCESS  read-write
+     STATUS      current
+     DESCRIPTION
+         "The second string of hex bytes forming the CVC. Reading
+	  from this MIB returns the entire CVC."
+     ::= { arrisCmDoc30Software 6 }
+
+arrisCmDoc30SwCvc3 OBJECT-TYPE
+     SYNTAX      CvcString
+     MAX-ACCESS  read-write
+     STATUS      current
+     DESCRIPTION
+         "The third string of hex bytes forming the CVC. Reading
+	  from this MIB returns the entire CVC."
+     ::= { arrisCmDoc30Software 7 }
+
+arrisCmDoc30SwCvc4 OBJECT-TYPE
+     SYNTAX      CvcString
+     MAX-ACCESS  read-write
+     STATUS      current
+     DESCRIPTION
+         "The fourth (and final) string of hex bytes forming the CVC.
+	  Reading from this MIB returns the entire CVC."
+     ::= { arrisCmDoc30Software 8 }
+
+arrisCmDoc30SwRegistrationState OBJECT-TYPE
+     SYNTAX      INTEGER {
+        docsis-DownstreamScanning   (1),
+        docsis-DownstreamRanging    (2),
+        docsis-UpstreamRanging      (3),
+        docsis-DHCP                 (4),
+        docsis-TFTP                 (5),
+        docsis-DataRegComplete      (6),
+        telephony-DHCP              (7),
+        telephony-TFTP              (8),
+        telephony-RegWithCallServer (9),
+        telephony-RegComplete       (10)
+      }
+     MAX-ACCESS  read-only
+     STATUS      current
+     DESCRIPTION
+         "The last registration step completed as the E-MTA provisioning
+   progresses through the DOCSIS/PacketCable registration and
+   provisioning steps."
+     ::= { arrisCmDoc30Software 9 }
+
+-- arrisCmDoc30EsafeSoftware MIB objects --
+
+arrisCmDoc30EsafeSwTable OBJECT-TYPE
+     SYNTAX      SEQUENCE OF ArrisCmDoc30EsafeSwEntry
+     MAX-ACCESS  not-accessible
+     STATUS      current
+     DESCRIPTION
+         "This table contains all the MIB variables required to upgrade
+	  Touchstone ESAFE devices."
+     ::= { arrisCmDoc30EsafeSoftware 1 }
+
+arrisCmDoc30EsafeSwEntry OBJECT-TYPE
+     SYNTAX      ArrisCmDoc30EsafeSwEntry
+     MAX-ACCESS  not-accessible
+     STATUS      current
+     DESCRIPTION
+         "This table contains all the MIB variables required to upgrade
+	  Touchstone ESAFE devices."
+     INDEX { arrisCmDoc30EsafeSwDeviceIndex  }
+     ::= {  arrisCmDoc30EsafeSwTable 1 }
+
+ArrisCmDoc30EsafeSwEntry ::= SEQUENCE {
+         arrisCmDoc30EsafeSwDeviceIndex       INTEGER,
+	 arrisCmDoc30EsafeSwServerAddressType InetAddressType,
+	 arrisCmDoc30EsafeSwServerAddress     InetAddress,
+	 arrisCmDoc30EsafeSwFilename          DisplayString,
+	 arrisCmDoc30EsafeSwAdminStatus       INTEGER,
+	 arrisCmDoc30EsafeSwOperStatus        INTEGER,
+	 arrisCmDoc30EsafeSwCurrentVers       DisplayString
+     }
+
+arrisCmDoc30EsafeSwDeviceIndex OBJECT-TYPE
+     SYNTAX      INTEGER (1..5)
+     MAX-ACCESS  not-accessible
+     STATUS      current
+     DESCRIPTION
+         "Index used to order the arrisCmDoc30SwTable entries.
+	    ESAFE Index:
+	      1 - Router/AP Firmware
+	      2 - AP Firmware (potentially split out from router)
+	      3 - MOCA Firmware
+	      4 - DECT Firmware
+	      5 - ?"
+     ::= { arrisCmDoc30EsafeSwEntry 1 }
+
+arrisCmDoc30EsafeSwServerAddressType OBJECT-TYPE
+     SYNTAX InetAddressType
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+         "The IP type (IPv4 or IPv6) of the TFTP server specified in
+	 arrisCmDoc30EsafeSwServerAddress
+         (REQUIRED)"
+     ::= { arrisCmDoc30EsafeSwEntry 2 }
+
+arrisCmDoc30EsafeSwServerAddress OBJECT-TYPE
+     SYNTAX InetAddress
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+         "The IPv4 or IPv6 address of the TFTP server that will be used to
+	 download the Touchstone software image. Note that before setting
+	 this object, setting arrisCmDoc30EsafeSwServerAddressType to the
+	 appropriate value is required.
+         (REQUIRED)"
+     ::= { arrisCmDoc30EsafeSwEntry 3 }
+
+arrisCmDoc30EsafeSwFilename OBJECT-TYPE
+     SYNTAX      DisplayString (SIZE (0..64))
+     MAX-ACCESS  read-write
+     STATUS      current
+     DESCRIPTION
+         "The file name of the Touchstone ESAFE software image to be loaded
+          on to this device.
+          (REQUIRED)"
+     ::= { arrisCmDoc30EsafeSwEntry 4 }
+
+arrisCmDoc30EsafeSwAdminStatus OBJECT-TYPE
+     SYNTAX INTEGER {
+         upgradeFromMgt(1),
+         allowProvisioningUpgrade(2),
+         ignoreProvisioningUpgrade(3)
+     }
+     MAX-ACCESS  read-write
+     STATUS      current
+     DESCRIPTION
+         "If set to upgradeFromMgt(1), the device will initiate a
+          TFTP software image download using arrisCmDoc30EsafeSwFilename
+	  for the currently indexed esafe device in
+	  arrisCmDoc30EsafeSwDeviceIndex.
+
+	  If set to allowProvisioningUpgrade(2), the device will
+	  use the software version information supplied by the
+	  provisioning server when next rebooting (this does not
+	  cause a reboot).
+
+	  When set to ignoreProvisioningUpgrade(3), the device
+	  will disregard software image upgrade information
+	  from the provisioning server."
+     ::= { arrisCmDoc30EsafeSwEntry 5 }
+
+arrisCmDoc30EsafeSwOperStatus OBJECT-TYPE
+     SYNTAX INTEGER {
+         inProgress(1),
+         completeFromProvisioning(2),
+         completeFromMgt(3),
+	 failed(4),
+	 other(5)
+     }
+     MAX-ACCESS  read-only
+     STATUS      current
+     DESCRIPTION
+         "InProgress(1) indicates that a TFTP download is
+          currently underway.
+
+          CompleteFromProvisioning(2) indicates that the last
+          software upgrade was a result of version mismatch at
+          provisioning.
+
+          CompleteFromMgt(3) indicates that the last software
+          upgrade was a result of setting arrisCmDoc30EsafeSwAdminStatus to
+          upgradeFromMgt.
+
+          Failed(4) indicates that the last attempted download
+          failed."
+     ::= { arrisCmDoc30EsafeSwEntry 6 }
+
+arrisCmDoc30EsafeSwCurrentVers OBJECT-TYPE
+     SYNTAX      DisplayString (SIZE (0..64))
+     MAX-ACCESS  read-only
+     STATUS      current
+     DESCRIPTION
+         "The software version currently operating in this device.
+          This string's syntax is that used by the
+          individual vendor to identify software versions.
+          For a CM, this string will describe the current
+          software load.  For a CMTS, this object SHOULD contain
+          a human-readable representation either of the vendor
+          specific designation of the software for the chassis,
+          or of the software for the control processor.  If
+          neither of these is applicable, the value MUST be a
+          zero-length string."
+     ::= { arrisCmDoc30EsafeSwEntry 7 }
+
+arrisCmDoc30EsafeSmartDownloadMode OBJECT-TYPE
+     SYNTAX INTEGER {
+         disable(0),
+         enable(1),
+         autonegotiate(2)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+         "Used to turn ARRIS Smart Downloads on/off/auto for esafe-enabled
+	  products.  The smart download feature allows the modem to
+	  pause and resume the TFTP of its firmware file in order
+	  to intelligently decide what needs to be done during the
+	  download.  The upside of this feature is downloads are shorter
+	  because only the exact amount of flash that is needed by the
+	  file is erased.  It also does not need to erase backup flash
+	  banks for esafe images it is not downloading.  It also will
+	  enable more advanced download features in the future.  If this
+	  feature is disabled then the backup images for all esafes as
+	  well as the main image will need to be erased before the download
+	  begins.  There is also an autonegotiate mode that can be enabled by
+	  the flag.  This will allow the modem to use the RFC2349 timeout
+	  option negotiation with the TFTP server to decide if smart
+	  downloads will be enabled or disabled for subsequent downloads.
+	  This mode will allow the modem to adapt its behavior to the server.
+	  Supported Value:
+	  0 - Smart Downloads DISABLE
+	  1 - Smart Downloads ENABLE
+	  2 - Smart Downloads AUTONEGOTIATE"
+     ::= { arrisCmDoc30EsafeSoftware 2 }
+
+arrisCmDoc30EsafeSmartDownloadStatus OBJECT-TYPE
+     SYNTAX INTEGER {
+         disabled(0),
+         enabled(1)
+     }
+     MAX-ACCESS read-only
+     STATUS current
+     DESCRIPTION
+         "Displays the current status of the smart download feature.  This result may
+	  be either statically provisioned or autonegotiated depending on the smart
+	  download mode.
+	  Expected Values:
+	  0 - Smart Downloads DISABLED
+	  1 - Smart Downloads ENABLED"
+     ::= { arrisCmDoc30EsafeSoftware 3 }
+
+-- arrisCmDoc30ResetReasonLog MIB objects --
+
+arrisCmDoc30LastHwResetReason OBJECT-TYPE
+     SYNTAX     DisplayString
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "The last reset reason retrieved from the actual processor HW. This reason
+          is used to determine if the HW or FW caused the reset.  The majority of the time
+          this reset will indicate that the FW reset the device. It should
+          be noted that this reason is not stored off and will show only the last reason
+          for the HW to reset."
+     ::= { arrisCmDoc30ResetReasonLog 1 }
+
+arrisCmDoc30ResetReasonLogTable OBJECT-TYPE
+     SYNTAX      SEQUENCE OF ArrisCmDoc30ResetReasonLogEntry
+     MAX-ACCESS  not-accessible
+     STATUS      current
+     DESCRIPTION
+         "This table contains the last 10 reset reasons."
+     ::= { arrisCmDoc30ResetReasonLog 2 }
+
+arrisCmDoc30ResetReasonLogEntry OBJECT-TYPE
+     SYNTAX      ArrisCmDoc30ResetReasonLogEntry
+     MAX-ACCESS  not-accessible
+     STATUS      current
+     DESCRIPTION
+         "This table contains the last 10 reset reasons."
+     INDEX { arrisCmDoc30ResetReasonLogIndex  }
+     ::= {  arrisCmDoc30ResetReasonLogTable 1 }
+
+ArrisCmDoc30ResetReasonLogEntry ::= SEQUENCE {
+         arrisCmDoc30ResetReasonLogIndex   INTEGER,
+         arrisCmDoc30ResetReasonLogText    DisplayString
+     }
+
+arrisCmDoc30ResetReasonLogIndex OBJECT-TYPE
+     SYNTAX      INTEGER (1..10)
+     MAX-ACCESS  not-accessible
+     STATUS      current
+     DESCRIPTION
+         "Index used to report log reasons."
+     ::= { arrisCmDoc30ResetReasonLogEntry 1 }
+
+arrisCmDoc30ResetReasonLogText OBJECT-TYPE
+     SYNTAX     DisplayString
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "The reported reset reason log text."
+     ::= { arrisCmDoc30ResetReasonLogEntry 2 }
+
+-- arrisCmDoc30DhcpExtended MIB objects --
+
+arrisCmDoc30DhcpExtendedProvisionedMode OBJECT-TYPE
+      SYNTAX INTEGER {
+        ipv4-only  (0),
+        ipv6-only (1),
+	alternate-prov-mode (2),
+	dual-prov-mode (3)
+     }
+      MAX-ACCESS read-only
+      STATUS     current
+      DESCRIPTION
+      "Displays the Cm Provisioned Mode"
+      ::= { arrisCmDoc30DhcpExtended 1 }
+
+
+arrisCmDoc30DhcpExtendedPreferredMode OBJECT-TYPE
+      SYNTAX INTEGER {
+        ipv4  (0),
+        ipv6  (1)
+     }
+      MAX-ACCESS read-only
+      STATUS     current
+      DESCRIPTION
+      "Displays the Cm preffered IP Mode"
+      ::= { arrisCmDoc30DhcpExtended 2 }
+
+arrisCmDoc30DhcpExtendedActiveMode OBJECT-TYPE
+      SYNTAX INTEGER {
+        ipv4  (0),
+        ipv6  (1)
+     }
+      MAX-ACCESS read-only
+      STATUS     current
+      DESCRIPTION
+      "Displays the Cm active IP Mode"
+      ::= { arrisCmDoc30DhcpExtended 3 }
+
+arrisCmDoc30DhcpExtendedLeaseParametersTable OBJECT-TYPE
+     SYNTAX      SEQUENCE OF ArrisCmDoc30DhcpExtendedLeaseParametersEntry
+     MAX-ACCESS  not-accessible
+     STATUS      current
+     DESCRIPTION
+         "This table contains all the MIB variables required for
+          showing the dhcp lease parameters."
+     ::= { arrisCmDoc30DhcpExtended  5}
+
+arrisCmDoc30DhcpExtendedLeaseParametersEntry OBJECT-TYPE
+     SYNTAX     ArrisCmDoc30DhcpExtendedLeaseParametersEntry
+     MAX-ACCESS  not-accessible
+     STATUS      current
+     DESCRIPTION
+         "This table contains all the MIB variables required for
+          showing the dhcp lease parameters."
+     INDEX { arrisCmDoc30DhcpExtendedLeaseParametersIndex  }
+     ::= {  arrisCmDoc30DhcpExtendedLeaseParametersTable 1 }
+
+ArrisCmDoc30DhcpExtendedLeaseParametersEntry ::= SEQUENCE {
+         arrisCmDoc30DhcpExtendedLeaseParametersIndex             INTEGER,
+         arrisCmDoc30DhcpExtendedLeaseParametersType          INTEGER,
+         arrisCmDoc30DhcpExtendedOfferedLeaseTime    INTEGER,
+         arrisCmDoc30DhcpExtendedTimeUntilRenew          INTEGER,
+         arrisCmDoc30DhcpExtendedTimeUntilRebind            INTEGER,
+         arrisCmDoc30DhcpExtendedLeaseTimeRemaining        INTEGER,
+         arrisCmDoc30DhcpExtendedRenewLease        INTEGER
+     }
+
+arrisCmDoc30DhcpExtendedLeaseParametersIndex OBJECT-TYPE
+     SYNTAX      INTEGER
+     MAX-ACCESS  not-accessible
+     STATUS      current
+     DESCRIPTION
+         "Index used to order the arrisCmDoc30DhcpExtendedLeaseParametersTable entries."
+     ::= { arrisCmDoc30DhcpExtendedLeaseParametersEntry 1 }
+
+arrisCmDoc30DhcpExtendedLeaseParametersType OBJECT-TYPE
+      SYNTAX INTEGER {
+        dhcpv4  (0),
+        dhcpv6  (1)
+     }
+     MAX-ACCESS read-only
+     STATUS current
+     DESCRIPTION
+         "This mib displays the Dhcp Type(dhcpv4,dhcpv6)"
+     ::= {  arrisCmDoc30DhcpExtendedLeaseParametersEntry 2}
+
+arrisCmDoc30DhcpExtendedOfferedLeaseTime OBJECT-TYPE
+     SYNTAX INTEGER
+     MAX-ACCESS read-only
+     STATUS current
+     DESCRIPTION
+         "This displays the Offered IP Lease time expressed in seconds."
+     ::= {  arrisCmDoc30DhcpExtendedLeaseParametersEntry 3}
+
+arrisCmDoc30DhcpExtendedTimeUntilRenew OBJECT-TYPE
+     SYNTAX INTEGER
+     MAX-ACCESS read-only
+     STATUS current
+     DESCRIPTION
+         "This displays the current time remaining before the MTA starts the lease renewal
+          process.  This time is expressed in seconds."
+     ::= {  arrisCmDoc30DhcpExtendedLeaseParametersEntry  4 }
+
+arrisCmDoc30DhcpExtendedTimeUntilRebind OBJECT-TYPE
+     SYNTAX INTEGER
+     MAX-ACCESS read-only
+     STATUS current
+     DESCRIPTION
+         "This displays the current time remaining before the CM starts the lease rebinding
+          process.  This time is expressed in seconds."
+     ::= {  arrisCmDoc30DhcpExtendedLeaseParametersEntry 5 }
+
+arrisCmDoc30DhcpExtendedLeaseTimeRemaining OBJECT-TYPE
+     SYNTAX INTEGER
+     MAX-ACCESS read-only
+     STATUS current
+     DESCRIPTION
+                 "This displays the Remaining IP Lease time expressed in seconds."
+     ::= {  arrisCmDoc30DhcpExtendedLeaseParametersEntry 6 }
+
+arrisCmDoc30DhcpExtendedRenewLease OBJECT-TYPE
+     SYNTAX INTEGER {
+       noApply(0),
+       apply(1)
+     }
+     MAX-ACCESS  read-write
+     STATUS      current
+     DESCRIPTION
+         "Set to apply(1) to renew the WAN(0) DHCP lease"
+     ::= {  arrisCmDoc30DhcpExtendedLeaseParametersEntry 7 }
+
+arrisCmDoc30DhcpExtendedSvrParametersTable OBJECT-TYPE
+     SYNTAX      SEQUENCE OF ArrisCmDoc30DhcpExtendedSvrParametersEntry
+     MAX-ACCESS  not-accessible
+     STATUS      current
+     DESCRIPTION
+         "This table contains all the MIB variables required for the
+          Dhcp Svr. Parameters."
+     ::= { arrisCmDoc30DhcpExtended  6}
+
+arrisCmDoc30DhcpExtendedSvrParametersEntry OBJECT-TYPE
+     SYNTAX     ArrisCmDoc30DhcpExtendedSvrParametersEntry
+     MAX-ACCESS  not-accessible
+     STATUS      current
+     DESCRIPTION
+         "This table contains all the MIB variables required for the
+          Dhcp Svr. Parameters."
+     INDEX { arrisCmDoc30DhcpExtendedSvrParametersIndex }
+     ::= {  arrisCmDoc30DhcpExtendedSvrParametersTable 1 }
+
+ArrisCmDoc30DhcpExtendedSvrParametersEntry ::= SEQUENCE {
+         arrisCmDoc30DhcpExtendedSvrParametersIndex             INTEGER,
+	 arrisCmDoc30DhcpExtendedSvrParametersType                     INTEGER,
+         arrisCmDoc30DhcpExtendedState    INTEGER,
+         arrisCmDoc30DhcpExtendedPrimaryDhcpServerIpAddr          InetAddress,
+         arrisCmDoc30DhcpExtendedTftpSvrIpAddr           InetAddress,
+         arrisCmDoc30DhcpExtendedTimeSvrIpAddr        InetAddress,
+         arrisCmDoc30DhcpExtendedCmTimeOffset	  INTEGER,
+         arrisCmDoc30DhcpExtendedPrimaryTeleDhcpSvr InetAddress,
+         arrisCmDoc30DhcpExtendedSecondaryTeleDhcpSvr InetAddress,
+         arrisCmDoc30DhcpExtendedSrvDUIDV6 DisplayString
+
+     }
+
+arrisCmDoc30DhcpExtendedSvrParametersIndex OBJECT-TYPE
+     SYNTAX      INTEGER
+     MAX-ACCESS  not-accessible
+     STATUS      current
+     DESCRIPTION
+         "Index used to order the arrisCmDoc30DhcpExtendedSvrParametersTable entries."
+     ::= { arrisCmDoc30DhcpExtendedSvrParametersEntry 1 }
+
+ arrisCmDoc30DhcpExtendedSvrParametersType OBJECT-TYPE
+     SYNTAX INTEGER {
+        dhcpv4  (0),
+        dhcpv6  (1)
+     }
+     MAX-ACCESS  read-only
+     STATUS      current
+     DESCRIPTION
+         "This mib displays the Dhcp Type(dhcpv4,dhcpv6)."
+     ::= { arrisCmDoc30DhcpExtendedSvrParametersEntry 2 }
+
+arrisCmDoc30DhcpExtendedState OBJECT-TYPE
+     SYNTAX INTEGER {
+        init-selecting  (0),
+        requesting      (1),
+        bound           (2),
+        renewing        (3),
+        rebinding       (4),
+        init-reboot     (5),
+        renew-requested (6),
+        released        (7),
+	dhcp6c-init     (8),
+        dhcp6c-solicit  (9),
+        dhcp6c-inforeq (10),
+        dhcp6c-request (11),
+        dhcp6c-renew   (12),
+        dhcp6c-rebind  (13),
+        dhcp6c-release (14),
+        dhcp6c-decline (15),
+        dhcp6c-confirm (16),
+	dhcp6c-idle     (17)
+	}
+     MAX-ACCESS read-only
+     STATUS current
+     DESCRIPTION
+         "This displays the current Dhcp state of the CM."
+     ::= { arrisCmDoc30DhcpExtendedSvrParametersEntry 3 }
+
+arrisCmDoc30DhcpExtendedPrimaryDhcpServerIpAddr OBJECT-TYPE
+     SYNTAX InetAddress
+     MAX-ACCESS read-only
+     STATUS current
+     DESCRIPTION
+		 "This displays the primary Dhcp server address."
+     ::= { arrisCmDoc30DhcpExtendedSvrParametersEntry 4 }
+
+arrisCmDoc30DhcpExtendedTftpSvrIpAddr OBJECT-TYPE
+     SYNTAX InetAddress
+     MAX-ACCESS read-only
+     STATUS current
+     DESCRIPTION
+		 "This displays the current Tftp Server IP address in use."
+     ::= { arrisCmDoc30DhcpExtendedSvrParametersEntry 5 }
+
+arrisCmDoc30DhcpExtendedTimeSvrIpAddr OBJECT-TYPE
+     SYNTAX InetAddress
+     MAX-ACCESS read-only
+     STATUS current
+     DESCRIPTION
+		 "This displays the current Time server IP address in use."
+     ::= { arrisCmDoc30DhcpExtendedSvrParametersEntry 6 }
+
+arrisCmDoc30DhcpExtendedCmTimeOffset OBJECT-TYPE
+     SYNTAX INTEGER
+     MAX-ACCESS read-only
+     STATUS current
+     DESCRIPTION
+		 "This displays the current Time offset being used by the CM."
+     ::= { arrisCmDoc30DhcpExtendedSvrParametersEntry 7 }
+
+arrisCmDoc30DhcpExtendedPrimaryTeleDhcpSvr OBJECT-TYPE
+     SYNTAX InetAddress
+     MAX-ACCESS read-only
+     STATUS current
+     DESCRIPTION
+		 "This displays the primary MTA Dhcp server address."
+     ::= { arrisCmDoc30DhcpExtendedSvrParametersEntry 8 }
+
+arrisCmDoc30DhcpExtendedSecondaryTeleDhcpSvr OBJECT-TYPE
+     SYNTAX InetAddress
+     MAX-ACCESS read-only
+     STATUS current
+     DESCRIPTION
+		 "This displays the secondary MTA Dhcp server address."
+     ::= { arrisCmDoc30DhcpExtendedSvrParametersEntry 9 }
+
+arrisCmDoc30DhcpExtendedSrvDUIDV6 OBJECT-TYPE
+     SYNTAX      DisplayString (SIZE (0..255))
+     MAX-ACCESS  read-only
+     STATUS      current
+     DESCRIPTION
+         "server DUID."
+     ::= { arrisCmDoc30DhcpExtendedSvrParametersEntry 10 }
+
+arrisCmDoc30DhcpExtendedCmParametersTable OBJECT-TYPE
+     SYNTAX      SEQUENCE OF ArrisCmDoc30DhcpExtendedCmParametersEntry
+     MAX-ACCESS  not-accessible
+     STATUS      current
+     DESCRIPTION
+         "This table contains all the MIB variables required for the
+          DHCP cm Parameters."
+     ::= { arrisCmDoc30DhcpExtended  7}
+
+arrisCmDoc30DhcpExtendedCmParametersEntry OBJECT-TYPE
+     SYNTAX     ArrisCmDoc30DhcpExtendedCmParametersEntry
+     MAX-ACCESS  not-accessible
+     STATUS      current
+     DESCRIPTION
+         "This table contains all the MIB variables required for the
+          DHCP cm Parameters."
+     INDEX { arrisCmDoc30DhcpExtendedCmParametersIndex  }
+     ::= {  arrisCmDoc30DhcpExtendedCmParametersTable 1 }
+
+ArrisCmDoc30DhcpExtendedCmParametersEntry ::= SEQUENCE {
+         arrisCmDoc30DhcpExtendedCmParametersIndex             INTEGER,
+	 arrisCmDoc30DhcpExtendedCmParametersType             INTEGER,
+         arrisCmDoc30DhcpExtendedCmIpAddr     InetAddress,
+         arrisCmDoc30DhcpExtendedCmSubNetMask         InetAddress,
+	 arrisCmDoc30DhcpExtendedCmPrefix                      INTEGER,
+         arrisCmDoc30DhcpExtendedCmGatewayIpAddr           InetAddress,
+         arrisCmDoc30DhcpExtendedCmConfigFile        SnmpAdminString,
+         arrisCmDoc30DhcpExtendedCmDUIDV6     DisplayString
+     }
+
+arrisCmDoc30DhcpExtendedCmParametersIndex OBJECT-TYPE
+     SYNTAX      INTEGER
+     MAX-ACCESS  not-accessible
+     STATUS      current
+     DESCRIPTION
+         "Index used to order the arrisCmDoc30DhcpExtendedCmParametersTable entries."
+     ::= { arrisCmDoc30DhcpExtendedCmParametersEntry 1 }
+
+arrisCmDoc30DhcpExtendedCmParametersType OBJECT-TYPE
+     SYNTAX INTEGER {
+        dhcpv4  (0),
+        dhcpv6  (1)
+     }
+     MAX-ACCESS  read-only
+     STATUS      current
+     DESCRIPTION
+         "This mib displays the Dhcp Type(dhcpv4,dhcpv6)."
+     ::= { arrisCmDoc30DhcpExtendedCmParametersEntry 2 }
+
+arrisCmDoc30DhcpExtendedCmIpAddr OBJECT-TYPE
+     SYNTAX InetAddress
+     MAX-ACCESS read-only
+     STATUS current
+     DESCRIPTION
+		 "This displays the currently leased IP address ."
+     ::= { arrisCmDoc30DhcpExtendedCmParametersEntry 3 }
+
+ arrisCmDoc30DhcpExtendedCmSubNetMask OBJECT-TYPE
+     SYNTAX InetAddress
+     MAX-ACCESS read-only
+     STATUS current
+     DESCRIPTION
+		 "This displays the current IP subnet mask in use."
+     ::= {arrisCmDoc30DhcpExtendedCmParametersEntry 4 }
+
+arrisCmDoc30DhcpExtendedCmPrefix OBJECT-TYPE
+     SYNTAX INTEGER
+     MAX-ACCESS read-only
+     STATUS current
+     DESCRIPTION
+		 "This displays the current IP Prefix in use."
+     ::= {arrisCmDoc30DhcpExtendedCmParametersEntry 5 }
+
+arrisCmDoc30DhcpExtendedCmGatewayIpAddr OBJECT-TYPE
+     SYNTAX InetAddress
+     MAX-ACCESS read-only
+     STATUS current
+     DESCRIPTION
+		 "This displays the current IP gateway address in use."
+     ::= { arrisCmDoc30DhcpExtendedCmParametersEntry 6 }
+
+arrisCmDoc30DhcpExtendedCmConfigFile OBJECT-TYPE
+     SYNTAX SnmpAdminString
+     MAX-ACCESS read-only
+     STATUS current
+     DESCRIPTION
+		 "This displays the CM configuration file to be retrived."
+     ::= { arrisCmDoc30DhcpExtendedCmParametersEntry 7 }
+
+arrisCmDoc30DhcpExtendedCmDUIDV6 OBJECT-TYPE
+     SYNTAX      DisplayString (SIZE (0..255))
+     MAX-ACCESS  read-only
+     STATUS      current
+     DESCRIPTION
+         "CM DUID."
+     ::= { arrisCmDoc30DhcpExtendedCmParametersEntry 8 }
+
+arrisCmDoc30DhcpExtendedDnsSvrTable OBJECT-TYPE
+     SYNTAX      SEQUENCE OF ArrisCmDoc30DhcpExtendedDnsSvrEntry
+     MAX-ACCESS  not-accessible
+     STATUS      current
+     DESCRIPTION 
+         "Table contains information for DNS Servers."
+     ::= { arrisCmDoc30DhcpExtended 8 }
+  
+arrisCmDoc30DhcpExtendedDnsSvrEntry OBJECT-TYPE
+     SYNTAX      ArrisCmDoc30DhcpExtendedDnsSvrEntry
+     MAX-ACCESS  not-accessible
+     STATUS      current
+     DESCRIPTION 
+         "Table contains information for DNS Servers."
+     INDEX { arrisCmDoc30DhcpExtendedDnsSvrIPIndex }   
+     ::= { arrisCmDoc30DhcpExtendedDnsSvrTable 1 }  
+  
+ArrisCmDoc30DhcpExtendedDnsSvrEntry ::= SEQUENCE {
+         arrisCmDoc30DhcpExtendedDnsSvrIPIndex      Unsigned32,
+         arrisCmDoc30DhcpExtendedDnsSvrIPAddrType   INTEGER,
+         arrisCmDoc30DhcpExtendedDnsSvrIPAddr       InetAddress
+     }      
+               
+arrisCmDoc30DhcpExtendedDnsSvrIPIndex OBJECT-TYPE
+     SYNTAX      Unsigned32
+     MAX-ACCESS  not-accessible
+     STATUS      current
+     DESCRIPTION 
+         "DNS Servers IP Index."
+     ::= { arrisCmDoc30DhcpExtendedDnsSvrEntry 1 }     
+       
+arrisCmDoc30DhcpExtendedDnsSvrIPAddrType OBJECT-TYPE
+     SYNTAX INTEGER {
+       dhcpv4 (0),
+       dhcpv6 (1)
+     }
+     MAX-ACCESS  read-only
+     STATUS      current
+     DESCRIPTION 
+         "This mib displays the Dhcp Type(dhcpv4,dhcpv6)."
+     ::= { arrisCmDoc30DhcpExtendedDnsSvrEntry 2 }
+
+arrisCmDoc30DhcpExtendedDnsSvrIPAddr OBJECT-TYPE
+     SYNTAX      InetAddress
+     MAX-ACCESS  read-only
+     STATUS      current
+     DESCRIPTION 
+         "IP address for DNS Servers."
+     ::= { arrisCmDoc30DhcpExtendedDnsSvrEntry 3 }
+
+END
+

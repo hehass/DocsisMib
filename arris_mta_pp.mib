@@ -1,0 +1,369 @@
+PACKETPORT-MIB DEFINITIONS ::= BEGIN
+
+IMPORTS
+ MODULE-IDENTITY, OBJECT-TYPE, Integer32, IpAddress
+  FROM SNMPv2-SMI
+ arris
+  FROM ARRIS-MIB
+ OBJECT-GROUP
+  FROM SNMPv2-CONF
+ TruthValue, DisplayString, TEXTUAL-CONVENTION
+  FROM SNMPv2-TC;
+
+packetPortMib MODULE-IDENTITY
+    LAST-UPDATED    "1407310000Z"
+    ORGANIZATION    "Arris Interactive"
+    CONTACT-INFO    "Chris Hare"
+    DESCRIPTION
+      "This is the portion of the Arris enterprise MIB that applies
+       to the Packetport."
+
+    REVISION    "1408200000Z"
+    DESCRIPTION
+         "Added 'Romania(37)' to CountryCode Textual-Convention."
+
+    REVISION    "1407310000Z"
+    DESCRIPTION
+         "Added 'United Kingdom(36)' to CountryCode Textual-Convention."
+
+    REVISION    "0008110000Z"
+    DESCRIPTION
+         "Initial Release"
+
+    REVISION    "1310090000Z"
+    DESCRIPTION
+         "Modified ppCfgMtaCallpFeatureSwitch Comments"
+    REVISION    "0905120000Z"
+    DESCRIPTION
+         "Modified ppCfgMtaFeatureSwitch Comments"
+    REVISION    "0904160000Z"
+    DESCRIPTION
+         "Added ppCfgMtaFeatureSwitch MIB"
+    REVISION    "0908040000Z"
+    DESCRIPTION
+         "Added ppCfgPortLoopCurrent MIB"
+    REVISION    "0910260000Z"
+    DESCRIPTION
+         "Added ppCfgPortLocUserIndication MIB"
+    REVISION    "1109020000Z"
+    DESCRIPTION
+         "Added 'chileT (35)' to CountryCode Textual-Convention."
+
+    ::= { arris 10 }
+
+
+CountryCode ::= TEXTUAL-CONVENTION
+  STATUS current
+  DESCRIPTION "These are the countries for the country
+               code template object."
+  SYNTAX INTEGER{
+      northAmerica57(1),
+      chile(2),
+      japan (3),
+      australia(4),
+      austria(5),
+      france(6),
+      germany(7),
+      ireland(8),
+      netherlands(9),
+      portugal(10),
+      spain(11),
+      belgium(12),
+      poland(13),
+      israel(14),
+      czechRepublic(15),
+      brazil(16),
+      northAmerica33(17),
+      northAmerica09(18),
+      netherlands09(19),
+      japan600(20),
+      hungary(21),
+      sweden(22),
+      norway(23),
+      slovakia(24),
+      japan600L412(25),
+      mexico(26),
+      panama(27),
+      mexicoC(28),
+      swiss(29),
+      poland1010(30),
+      germany2(31),
+      northAmerica66(32),
+      argentina(33),
+      slovenia(34),
+      chileT(35),
+      unitedKingdom(36),
+      romania(37)
+  }
+
+
+ppConfiguration OBJECT IDENTIFIER ::= { packetPortMib 1 }
+ppSurveillance OBJECT IDENTIFIER ::= { packetPortMib 2 }
+
+--=====================================================================
+-- Packetport per port configuration data
+--=====================================================================
+--=====================================================================
+-- Port Protocol Table
+--=====================================================================
+ppCfgPortTable OBJECT-TYPE
+ SYNTAX SEQUENCE OF PpCfgPortEntry
+ MAX-ACCESS not-accessible
+ STATUS current
+ DESCRIPTION
+  "This table is used to define the configurable data on a per port basis."
+ ::= { ppConfiguration 1 }
+
+ppCfgPortEntry OBJECT-TYPE
+ SYNTAX PpCfgPortEntry
+ MAX-ACCESS not-accessible
+ STATUS current
+ DESCRIPTION
+  "An entry in the Configuration Port table."
+ INDEX { ppCfgPortPortNumber }
+ ::= { ppCfgPortTable 1 }
+
+PpCfgPortEntry ::= SEQUENCE{
+  ppCfgPortPortNumber Integer32,
+  ppCfgPortLoopCurrent INTEGER,
+  ppCfgPortLocUserIndication INTEGER,
+  ppCfgPortT38MaxDatagram Integer32
+ }
+
+ppCfgPortPortNumber OBJECT-TYPE
+ SYNTAX Integer32
+ MAX-ACCESS not-accessible
+ STATUS current
+ DESCRIPTION "The unique value which identifies the port."
+ ::= { ppCfgPortEntry 1 }
+
+ppCfgPortLoopCurrent OBJECT-TYPE
+ SYNTAX INTEGER{ normal(1), high(2) }
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION "This object provides the ability to set the
+              loop current high or low."
+ ::= { ppCfgPortEntry 6 }
+
+ppCfgPortLocUserIndication OBJECT-TYPE
+ SYNTAX INTEGER { silence(0), reorderTone(1) }
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION "Treatement/Tone applied in loss of communication (LOC) scenarios."
+ DEFVAL { reorderTone }
+ ::= { ppCfgPortEntry 21 }
+
+ppCfgPortT38MaxDatagram OBJECT-TYPE
+ SYNTAX Integer32(160..65535)
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION "Specifies the T38 Max Datagram size for incoming T38 packets.  If this is used to
+              allow larger incoming T38 packets then the Call Agent must allocate more bandwidth
+              accordingly"
+ DEFVAL { 160 }
+ ::= { ppCfgPortEntry 25 }
+
+
+ppCfgMtaCountryTemplate OBJECT-TYPE
+ SYNTAX CountryCode
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION "The country code template."
+ ::= { ppConfiguration 14 }
+
+ppCfgMtaCallpFeatureSwitch OBJECT-TYPE
+ SYNTAX Integer32
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION "Callp Feature Switch activates certain functionality
+              and compliancies in callp.
+              WARNING: Changes can result into loss of communication
+                       to the Callagent or loss of the voicepath.
+                       Please read documentation before changing!
+
+0x00000001 // Stop piggybacked transmissions of NCS messages
+0x00000002 // Prevent endpoint to enter the Lockstep quarantine mode
+0x00000004 // If line is not provisioned show OOS rather than IDLE for arrisMtaDevLineCardState.
+0x00000008 // Reduce the capability descriptor in the SDP to T38 only.
+0x00000010 // NO LONGER USED
+0x00000020 // NO LONGER USED
+0x00000040 // Apply auto OSI to both originating and terminating side for NCS calls..
+0x00000080 // Don't include the mptime parameter in the sdp if bit is set to 1. Used for older Cisco BTS systems that edited the sdp causing calls to fail. (used to be CPFS_ANYFQDNOK - allow any MTA FQND in NCS message)
+0x00000100 // Suppress capability attribute parameters in the SDP if set to 1.
+0x00000200 // NO LONGER USED
+0x00000400 // Ignore format-specific SDP attribute lines referring to payload types not listed in media description (m= line)
+0x00000800 // Reject CRCX or MDCX if no gate ID ever provided.
+0x00001000 // need to use rfc-2833 rtp messages for Nuera, ie ABCD signalling
+0x00002000 // NO LONGER USED
+0x00004000 // If this flag is set then perform DSX DQoS only.
+0x00008000 // Disable endpoint from sending provisional responses.
+0x00010000 // Enable Payload Header Suppression
+0x00020000 // NO LONGER USED
+0x00040000 // NO LONGER USED
+0x00080000 // need to use rfc-2833 rtp messages LUCENT payload 94
+0x00100000 // Disables RTP and RTCP security
+0x00200000 // NO LONGER USED
+0x00400000 // Allow redirect with no IPsec.
+0x00800000 // Add brackets around IP for MTA FQDN when communicating with the call server when bit is enabled (default disabled)
+0x01000000 // Send dtmf digits via RFC2833 with payload 101 (enabled if set - default disabled)
+0x02000000 // NO LONGER USED
+0x04000000 // NO LONGER USED
+0x08000000 // Present CID in alternate (non sequential) order.
+0x10000000 // Delay DLCX response on a connection that exists on an onhook only line.  This give the TTM time to process RTP packets in the jitter buffer.  This addresses a VMWI issue at Videotron.
+0x20000000 // MTA generates automatic OSI upon deletion of last connection on the line (if set, default off)
+0x40000000 // NO LONGER USED
+0x80000000 // Do not set this bit.  It's used to detect an invalid CPFS setting.  Some provisioning servers will pad the CPFS value with leading 1's!"
+ ::= { ppConfiguration 20 }
+
+ppCfgRfc2833DigitPayloadType OBJECT-TYPE
+ SYNTAX Integer32(96..127)
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION "This object is used to define the payload type used for 2833 digit events
+              when enabled via setting the bit in the Callp Feature Switch."
+ DEFVAL { 101 }
+ ::= { ppConfiguration 23 }
+
+ppCfgMtaFeatureSwitch OBJECT-TYPE
+ SYNTAX Integer32
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION "MTA Feature Switch activates certain functionality and compliancies in the MTA.
+
+ 0x00000001 Disable cfg file Hash checking during provisioning sequence.
+ 0x00000002 MTA MAC address will not be counted against the MaxCpeAllowed variable.
+ 0x00000004 UNUSED
+ 0x00000008 UNUSED
+ 0x00000010 Skips the IP check of the KDC load balancer IP forwarding feature.
+ 0x00000020 UNUSED
+ 0x00000040 Skips the verification of the SNMP inform.
+ 0x00000080 UNUSED
+ 0x00000100 UNUSED
+ 0x00000200 UNUSED
+ 0x00000400 Do not strip leading '/' from the MTA config file name.
+ 0x00000800 Report Warning if Loop Diags Ringer Test result is below minimum criteria.
+ 0x00001000 mta will not be reset until all the lines are in idle.
+ 0x80000000 Do not set this bit.  It is used to detect an invalid MTA Feature Switch setting. Some
+            provisioning servers pad the MTA Feature Switch value with leading 1's!
+
+All other bits are unused."
+ ::= { ppConfiguration 24 }
+
+ppCfgMtaCallpFeatureSwitch2 OBJECT-TYPE
+ SYNTAX Integer32
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION "This object is like ppCfgMtaCallpFeatureSwitch. It is used to activates
+              certain functionality and compliancies in callp.
+
+0x00000001 // Treat osi signal as bz signal (This bit is used for NCS only).
+0x00000002 // Ignore handling TDD tone detection
+0x00000004 // change the codec list behaviour,example:with this bit set, change a=rtpmap:8 PCMA/8000/1 to a=rtpmap:8 PCMA/8000
+0x00000008 // Ignore handling Fax/Modem tone detection
+0x00000010 // Unused
+0x00000020 // Unused
+0x00000040 // Unused
+0x00000080 // Unused
+0x00000100 // Unused
+0x00000200 // Unused
+0x00000400 // Unused
+0x00000800 // Unused
+0x00001000 // Unused
+0x00002000 // Unused
+0x00004000 // Unused
+0x00008000 // Unused
+0x00010000 // Unused
+0x00020000 // Unused
+0x00040000 // Unused
+0x00080000 // Unused
+0x00100000 // Unused
+0x00200000 // Unused
+0x00400000 // Unused
+0x00800000 // Unused
+0x01000000 // Unused
+0x02000000 // Unused
+0x04000000 // Unused
+0x08000000 // Unused
+0x10000000 // Unused
+0x20000000 // Unused
+0x40000000 // Unused
+0x80000000 // Unused"
+ ::= { ppConfiguration 27 }
+
+--=======================================================================
+-- Packetport per port surveillance data
+--=====================================================================
+
+--=====================================================================
+-- Port Protocol Table
+--=====================================================================
+ppSurvPortTable OBJECT-TYPE
+ SYNTAX SEQUENCE OF PpSurvPortEntry
+ MAX-ACCESS not-accessible
+ STATUS current
+ DESCRIPTION
+  "This table is used to define the surveillance data on a per port basis."
+ ::= { ppSurveillance 1 }
+
+ppSurvPortEntry OBJECT-TYPE
+ SYNTAX PpSurvPortEntry
+ MAX-ACCESS not-accessible
+ STATUS current
+ DESCRIPTION
+  "An entry in the Configuration Port table."
+ INDEX { ppSurvPortNumber }
+ ::= { ppSurvPortTable 1 }
+
+PpSurvPortEntry ::= SEQUENCE{
+ ppSurvPortNumber Integer32,
+ ppSurvPortMaintState INTEGER,
+ ppSurvPortLcDiagRequest TruthValue,
+ ppSurvPortLcDiagLastResult INTEGER
+ }
+
+ppSurvPortNumber OBJECT-TYPE
+ SYNTAX Integer32
+ MAX-ACCESS not-accessible
+ STATUS current
+ DESCRIPTION "The unique value which identifies the port."
+ ::= { ppSurvPortEntry 1 }
+
+ppSurvPortMaintState OBJECT-TYPE
+ SYNTAX INTEGER{isnr(1),isnr-trafbsy(2),
+                istrbl-mismatch(3),istrbl-fef(4),
+                istrbl-tstf(5), istrbl-diag(6),
+                istrbl-lcprt(7), oosnr-unprov(8),
+                oosnr(9), oostrbl(10),oostrbl-tstf(11),
+                oostrbl-diag(12), oostrbl-lcprt(13)}
+ MAX-ACCESS read-only
+ STATUS current
+ DESCRIPTION "The maintenance state of the line."
+ ::= { ppSurvPortEntry 2 }
+
+ppSurvPortLcDiagRequest OBJECT-TYPE
+ SYNTAX TruthValue
+ MAX-ACCESS read-write
+ STATUS current
+ DESCRIPTION "Setting this value to true will send a
+              diagnostics request on the line.  Reading this
+              value will always return false.  The
+              maintenance state of the line indicates
+              if diagnostics are being run on the line."
+ ::= { ppSurvPortEntry 4 }
+
+ppSurvPortLcDiagLastResult OBJECT-TYPE
+ SYNTAX INTEGER{diagnostics-passed(1),slac-revision-failure(2),
+                mpi-failure(3),power-or-clock-failure(4),
+                pcm-failure(5), standby-hook-failure(6),
+                active-hook-failure(7), vf-failure(8),
+                ringing-failure(9), invalid-state-to-init-diags(10),
+                line-is-unprovisioned(11), diagnostics-results-pending(12)}
+ MAX-ACCESS read-only
+ STATUS current
+ DESCRIPTION "The last result of diags for this line.  If diagnostics
+              are in progress it will return results pending."
+ ::= { ppSurvPortEntry 6 }
+
+END
+
+

@@ -1,0 +1,2460 @@
+ARRIS-WRM-DEVICE-MIB DEFINITIONS ::= BEGIN
+
+IMPORTS
+   MODULE-IDENTITY,
+   OBJECT-TYPE,
+   Integer32,
+   Counter32,
+   Counter64,
+   IpAddress,
+   TimeTicks
+      FROM SNMPv2-SMI
+   TruthValue, DisplayString, TimeStamp, DateAndTime
+      FROM SNMPv2-TC
+   SnmpAdminString
+      FROM SNMP-FRAMEWORK-MIB;
+
+-- The followin definitions define the parent mib: arrisProdIdCM
+-- Included so that arris_wrm_device.mib can compile as a stand-alone file
+org            OBJECT IDENTIFIER ::= { iso 3 }
+dod            OBJECT IDENTIFIER ::= { org 6 }
+internet       OBJECT IDENTIFIER ::= { dod 1 }
+private        OBJECT IDENTIFIER ::= { internet 4 }
+enterprises    OBJECT IDENTIFIER ::= { private 1 }
+arris          OBJECT IDENTIFIER ::= { enterprises 4115 }
+arrisProducts  OBJECT IDENTIFIER ::= { arris 1 }
+arrisProdIdCM  OBJECT IDENTIFIER ::= { arrisProducts 3 }
+
+arrisWrmDevMib MODULE-IDENTITY
+     LAST-UPDATED    "0803270000Z" -- March 27, 2008
+     ORGANIZATION    "ARRIS Broadband"
+     CONTACT-INFO    "Rodney Osborne
+                      Postal: ARRIS Broadband
+                      3871 Lakefield Drive
+                      Suite 300
+                      Suwanee, GA 30024-1242
+                      U.S.A.
+                      Phone:  +1 770-622-8400
+                      E-mail: rodney.osborne@arrisi.com"
+     DESCRIPTION
+         "This MIB module supplies the basic proprietary
+          management objects for ARRIS WRM (WTM552) devices."
+
+
+-- Revision history
+    REVISION    "0806110000Z" -- June 11, 2008
+    DESCRIPTION
+        "Added new objects (28 total) to match all of the wrm cli structure as of June 11, 2008"
+
+    REVISION    "0803270000Z" --  March 27, 2008
+    DESCRIPTION
+        "Initial version"
+    ::= { arrisProdIdCM 11 }
+
+
+
+-- This MIB module contains the following groups.
+
+arrisWrmDevMibObjects            OBJECT IDENTIFIER ::= { arrisWrmDevMib 1 }
+arrisWrmDevSetup                 OBJECT IDENTIFIER ::= { arrisWrmDevMibObjects 2 }
+arrisWrmDevOperationalSetup      OBJECT IDENTIFIER ::= { arrisWrmDevSetup 3 }
+
+arrisWrmDevLan                   OBJECT IDENTIFIER ::= { arrisWrmDevOperationalSetup 2 }
+arrisWrmDevWlan                  OBJECT IDENTIFIER ::= { arrisWrmDevOperationalSetup 3 }
+arrisWrmDevWan                   OBJECT IDENTIFIER ::= { arrisWrmDevOperationalSetup 4 }
+arrisWrmDevRm                    OBJECT IDENTIFIER ::= { arrisWrmDevOperationalSetup 5 }
+arrisWrmDevRip2Table OBJECT-TYPE SYNTAX SEQUENCE OF ArrisWrmDevRip2Entry
+          MAX-ACCESS not-accessible STATUS current DESCRIPTION "Rip 2 Table" ::= { arrisWrmDevOperationalSetup 6 }
+arrisWrmDevAcl                   OBJECT IDENTIFIER ::= { arrisWrmDevOperationalSetup 7 }
+arrisWrmDevAdevTable OBJECT-TYPE SYNTAX SEQUENCE OF ArrisWrmDevAdevEntry
+          MAX-ACCESS not-accessible STATUS current DESCRIPTION "Attached Devices" ::= { arrisWrmDevOperationalSetup 8 }
+arrisWrmDevDdns                  OBJECT IDENTIFIER ::= { arrisWrmDevOperationalSetup 9 }
+arrisWrmDevDmz                   OBJECT IDENTIFIER ::= { arrisWrmDevOperationalSetup 10 }
+arrisWrmDevLog                   OBJECT IDENTIFIER ::= { arrisWrmDevOperationalSetup 11 }
+arrisWrmDevMf                    OBJECT IDENTIFIER ::= { arrisWrmDevOperationalSetup 12 }
+arrisWrmDevSap                   OBJECT IDENTIFIER ::= { arrisWrmDevOperationalSetup 14 }
+arrisWrmDevSecu                  OBJECT IDENTIFIER ::= { arrisWrmDevOperationalSetup 15 }
+arrisWrmDevTz                    OBJECT IDENTIFIER ::= { arrisWrmDevOperationalSetup 16 }
+arrisWrmDevProvf                 OBJECT IDENTIFIER ::= { arrisWrmDevOperationalSetup 18 }
+arrisWrmDevUpnp                  OBJECT IDENTIFIER ::= { arrisWrmDevOperationalSetup 19 }
+arrisWrmDevUrl                   OBJECT IDENTIFIER ::= { arrisWrmDevOperationalSetup 20 }
+arrisWrmDevVs                    OBJECT IDENTIFIER ::= { arrisWrmDevOperationalSetup 21 }
+arrisWrmDevWrmp                  OBJECT IDENTIFIER ::= { arrisWrmDevOperationalSetup 22 }
+arrisWrmDevSystem                OBJECT IDENTIFIER ::= { arrisWrmDevOperationalSetup 23 }
+
+
+--
+-- The following MIB does the equivalent of the CLI command "sdc save"
+--
+
+arrisWrmDevSaveSettings OBJECT-TYPE
+     SYNTAX INTEGER {
+         true(1),
+         false(2)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+         "If set to True(1), the WRM will save settings and reboot.
+          When read, False(2) will always be returned"
+     ::= { arrisWrmDevOperationalSetup 1 }
+
+--
+-- The following group describes the MIB objects which control LAN IP parameters
+-- in the Wrm device.
+--
+
+arrisWrmDevNATEnable OBJECT-TYPE
+     SYNTAX INTEGER {
+         enable(1),
+         disable(2)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+         "This MIB object is used to enable or disable NAT (Network
+          Address Translation) on the WRM.
+
+          Note: NAT must be disabled in order to transmit RIP
+          information."
+     ::= { arrisWrmDevLan 1 }
+
+arrisWrmDevLanIpAddr OBJECT-TYPE
+     SYNTAX  IpAddress
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+         "This is the IP address for the LAN interface of the WRM.
+          All IP addresses assigned by the WRM's dhcp server are based
+          from this IP address."
+     ::= { arrisWrmDevLan 2 }
+
+arrisWrmDevLanIpMask OBJECT-TYPE
+     SYNTAX  IpAddress
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+         "This is the subnet Mask for the LAN interface of the WRM.
+          Together with arrisWrmDevLanIpAddr, this MIB defines
+          the subnet on the LAN interface of the WRM."
+     ::= { arrisWrmDevLan 3 }
+
+arrisWrmDevLanIpPoolStart OBJECT-TYPE
+     SYNTAX  Integer32
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+         "An  unsigned 8-bit field that determines the first IP address
+          in the WRM's DHCP IP Address pool.
+
+          The value contained in this MIB only determines the last
+          8 bits of the IP address.  The first 3 bytes (24 bits) of
+          the IP address come from the first 3 bytes of
+          arrisWrmDevLanIpAddr."
+     ::= { arrisWrmDevLan 4 }
+
+arrisWrmDevLanIpPoolEnd OBJECT-TYPE
+     SYNTAX  Integer32
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+         "An  unsigned 8-bit field that determines the last IP address
+          in the WRM's DHCP IP Address pool.
+
+          The value contained in this MIB only determines the last
+          8 bits of the IP address.  The first 3 bytes (24 bits) of
+          the IP address come from the first 3 bytes of
+          arrisWrmDevLanIpAddr."
+     ::= { arrisWrmDevLan 5 }
+
+arrisWrmDevLanDhcp OBJECT-TYPE
+     SYNTAX INTEGER {
+          enable(1),
+          disable(2)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+         "LAN DHCP server global enable."
+     ::= { arrisWrmDevLan 6 }
+
+arrisWrmDevLanLease OBJECT-TYPE
+     SYNTAX INTEGER {
+          forever(0),
+          halfHour(1),
+          oneHour(2),
+          twoHours(3),
+          halfDay(4),
+          oneDay(5),
+          twoDays(6),
+          oneWeek(7),
+          twoWeeks(8)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+         "Ammount of time in the LAN DHCP server lease time field"
+     ::= { arrisWrmDevLan 7 }
+
+arrisWrmDevLanDomain OBJECT-TYPE
+     SYNTAX OCTET STRING
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+         "Domain name used by the LAN DHCP server"
+     ::= { arrisWrmDevLan 8 }
+
+
+    arrisWrmDevLanIpReserve OBJECT IDENTIFIER
+     ::= { arrisWrmDevLan 9 }
+
+
+        arrisWrmDevLanIpReserveTable OBJECT-TYPE
+            SYNTAX SEQUENCE OF ArrisWrmDevLanIpReserveEntry
+            MAX-ACCESS not-accessible
+            STATUS current
+            DESCRIPTION
+                "Table of reserve ip."
+            ::= { arrisWrmDevLanIpReserve 1 }
+
+
+        arrisWrmDevLanIpReserveEntry OBJECT-TYPE
+            SYNTAX ArrisWrmDevLanIpReserveEntry
+            MAX-ACCESS not-accessible
+            STATUS current
+            DESCRIPTION
+                "Table of reserve ip."
+            INDEX { arrisWrmDevLanIpReserveIndex }
+            ::= { arrisWrmDevLanIpReserveTable 1 }
+
+
+        ArrisWrmDevLanIpReserveEntry ::=
+            SEQUENCE {
+                arrisWrmDevLanIpReserveIndex
+                    Integer32,
+                arrisWrmDevLanIpReserveHostname
+                    OCTET STRING,
+                arrisWrmDevLanIpReserveIp
+                    IpAddress,
+                arrisWrmDevLanIpReserveMac
+                    OCTET STRING
+             }
+
+        arrisWrmDevLanIpReserveIndex OBJECT-TYPE
+            SYNTAX Integer32
+            MAX-ACCESS read-only
+            STATUS current
+            DESCRIPTION
+                "Index of table entry."
+            ::= { arrisWrmDevLanIpReserveEntry 1 }
+
+
+        arrisWrmDevLanIpReserveHostname OBJECT-TYPE
+            SYNTAX OCTET STRING (SIZE (0..15))
+            MAX-ACCESS read-write
+            STATUS current
+            DESCRIPTION
+                "Hostname can't contain `~!@#$%^&*()=+[]{}\|;:<>?/"
+            ::= { arrisWrmDevLanIpReserveEntry 2 }
+
+
+        arrisWrmDevLanIpReserveIp OBJECT-TYPE
+            SYNTAX IpAddress
+            MAX-ACCESS read-write
+            STATUS current
+            DESCRIPTION
+                "Client will always receive the this IP address each time it accesses the DHCP server."
+            ::= { arrisWrmDevLanIpReserveEntry 3 }
+
+
+        arrisWrmDevLanIpReserveMac OBJECT-TYPE
+            SYNTAX OCTET STRING
+            MAX-ACCESS read-write
+            STATUS current
+            DESCRIPTION
+                "Client MAC address.
+                 example 00aabbccddee"
+            ::= { arrisWrmDevLanIpReserveEntry 4 }
+
+
+        arrisWrmDevLanIpReserveDelByIndex OBJECT-TYPE
+            SYNTAX INTEGER (0..255)
+            MAX-ACCESS read-write
+            STATUS current
+            DESCRIPTION
+                "Remove reserve ip from table.
+                index value please see arrisWrmDevLanIpReserveIndex"
+            ::= { arrisWrmDevLanIpReserve 2 }
+
+
+--
+-- The following group describes the MIB objects which control WLAN IP parameters
+-- in the Wrm device.
+--
+arrisWrmDevWlanAp OBJECT-TYPE
+     SYNTAX INTEGER {
+         enable(1),
+         disable(2)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+         "Enable/Disable"
+     ::= { arrisWrmDevWlan 1 }
+
+arrisWrmDevWlanApDhcpc OBJECT-TYPE
+     SYNTAX INTEGER {
+         enable(1),
+         disable(2)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+         "Enable the DHCP client in the WRM.  This client typically used in AP mode."
+     ::= { arrisWrmDevWlan 2 }
+
+arrisWrmDevWlanApConfigTable OBJECT-TYPE
+    SYNTAX SEQUENCE OF ArrisWrmDevWlanApConfigEntry
+    MAX-ACCESS not-accessible
+    STATUS current
+    DESCRIPTION
+        "This table contains MIB objects which control WLAN basic
+         parameters not covered in the WLAN security mode parameters."
+    ::= { arrisWrmDevWlan 3 }
+
+arrisWrmDevWlanApConfigEntry OBJECT-TYPE
+     SYNTAX      ArrisWrmDevWlanApConfigEntry
+     MAX-ACCESS  not-accessible
+     STATUS      current
+     DESCRIPTION
+         "This table contains MIB objects which control WLAN basic
+          parameters,which does not cover WLAN security mode parameters."
+     INDEX { arrisWrmDevWlanApConfigIndex  }
+     ::= {  arrisWrmDevWlanApConfigTable 1 }
+
+ArrisWrmDevWlanApConfigEntry ::= SEQUENCE {
+         arrisWrmDevWlanApConfigIndex     INTEGER,
+         arrisWrmDevWlanApConfigChannel   INTEGER,
+         arrisWrmDevWlanApConfigMode      Integer32,
+         arrisWrmDevWlanApConfigSsid      OCTET STRING,
+         arrisWrmDevWlanApConfigSSidBroad INTEGER,
+         arrisWrmDevWlanApConfigProtec    INTEGER,
+         arrisWrmDevWlanApConfigQos       INTEGER,
+         arrisWrmDevWlanApConfigLanAccess INTEGER
+     }
+
+arrisWrmDevWlanApConfigIndex OBJECT-TYPE
+     SYNTAX INTEGER
+     MAX-ACCESS read-only
+     STATUS current
+     DESCRIPTION
+         "The index value which uniquely identifies the
+     SSID NO. to which this entry is applicable."
+     ::= { arrisWrmDevWlanApConfigEntry 1 }
+
+arrisWrmDevWlanApConfigChannel OBJECT-TYPE
+     SYNTAX INTEGER {
+         auto(0),
+         channel-1(1),
+         channel-2(2),
+         channel-3(3),
+         channel-4(4),
+         channel-5(5),
+         channel-6(6),
+         channel-7(7),
+         channel-8(8),
+         channel-9(9),
+         channel-10(10),
+         channel-11(11)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION "auto | 1-11"
+     ::= { arrisWrmDevWlanApConfigEntry 2 }
+
+arrisWrmDevWlanApConfigMode OBJECT-TYPE
+     SYNTAX Integer32
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+     "802.11 mode:
+      0 - OFF
+      1 - 802.11g and 802.11b
+      2 - 802.11g only
+      3 - 802.11b only"
+     ::= { arrisWrmDevWlanApConfigEntry 3 }
+
+arrisWrmDevWlanApConfigSsid OBJECT-TYPE
+     SYNTAX OCTET STRING
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION  "SSID of this wireless channel"
+     ::= { arrisWrmDevWlanApConfigEntry 4 }
+
+arrisWrmDevWlanApConfigSSidBroad OBJECT-TYPE
+     SYNTAX INTEGER {
+         enable(1),
+         disable(2)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION "Broadcast SSID enable/disable."
+     ::= { arrisWrmDevWlanApConfigEntry 5 }
+
+arrisWrmDevWlanApConfigProtec OBJECT-TYPE
+     SYNTAX INTEGER {
+         on(1),
+         off(2)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+         "Protected Mode
+          If your wireless network has interference from other wireless networks
+          or devices such as wireless telephones, turning on Protected Mode may improve
+          performance. Otherwise, leave this option off for best performance."
+     ::= { arrisWrmDevWlanApConfigEntry 6 }
+
+arrisWrmDevWlanApConfigQos OBJECT-TYPE
+     SYNTAX INTEGER {
+         on(1),
+         off(2)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+         "The Quality of Service (QoS) feature provides enhanced performance over the wireless
+          network for streaming multimedia and similar services. Its primary goal is to set priority
+          on dedicated bandwidth, control jitter and latency (required by some real-time and interactive
+          traffic) and improve loss characteristics. Equally important is to make sure that setting
+          priority for one or more flows does not completely block other flows. "
+     ::= { arrisWrmDevWlanApConfigEntry 7 }
+
+arrisWrmDevWlanApConfigLanAccess OBJECT-TYPE
+     SYNTAX INTEGER {
+         enable(1),
+         disable(2)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+         " Enable/Disable WLAN access to the WRM and devices connected
+           to the WRM LAN ethernet ports.
+           Default value is enabled. "
+     ::= { arrisWrmDevWlanApConfigEntry 8 }
+
+arrisWrmDevWlanApSecuConfigTable OBJECT-TYPE
+    SYNTAX SEQUENCE OF ArrisWrmDevWlanApSecuConfigEntry
+    MAX-ACCESS not-accessible
+    STATUS current
+    DESCRIPTION
+        "This table contains MIB objects which control WLAN
+         security parameters,which does not cover them in
+         'arrisWrmDevWlanApSecuConfigTable'."
+    ::= { arrisWrmDevWlan 4 }
+
+arrisWrmDevWlanApSecuConfigEntry OBJECT-TYPE
+     SYNTAX      ArrisWrmDevWlanApSecuConfigEntry
+     MAX-ACCESS  not-accessible
+     STATUS      current
+     DESCRIPTION
+         "This table contains MIB objects which control WLAN
+          security parameters,which does not cover them in
+          'arrisWrmDevWlanApSecuConfigTable'."
+     INDEX { arrisWrmDevWlanApSecuConfigIndex  }
+     ::= {  arrisWrmDevWlanApSecuConfigTable 1 }
+
+ArrisWrmDevWlanApSecuConfigEntry ::= SEQUENCE {
+         arrisWrmDevWlanApSecuConfigIndex        INTEGER,
+         arrisWrmDevWlanApSecuConfigEnable       INTEGER,
+         arrisWrmDevWlanApSecuConfigWep          INTEGER,
+         arrisWrmDevWlanApSecuConfigWepK-type    INTEGER,
+         arrisWrmDevWlanApSecuConfigWepK-index   Integer32,
+         arrisWrmDevWlanApSecuConfigWepK-gen     OCTET STRING,
+         arrisWrmDevWlanApSecuConfigWepK-man     OCTET STRING,
+         arrisWrmDevWlanApSecuConfigWpaEncry     INTEGER,
+         arrisWrmDevWlanApSecuConfigWpaphrase    OCTET STRING,
+         arrisWrmDevWlanApSecuConfigWpaObsecu    INTEGER,
+         arrisWrmDevWlanApSecuConfigWpa2phrase   OCTET STRING,
+         arrisWrmDevWlanApSecuConfigWpa2Obsecu   INTEGER
+     }
+
+arrisWrmDevWlanApSecuConfigIndex OBJECT-TYPE
+     SYNTAX INTEGER
+     MAX-ACCESS read-only
+     STATUS current
+     DESCRIPTION
+         "The index value which uniquely identifies the
+     SSID NO. to which this entry is applicable."
+     ::= { arrisWrmDevWlanApSecuConfigEntry 1 }
+
+arrisWrmDevWlanApSecuConfigEnable OBJECT-TYPE
+     SYNTAX INTEGER {
+         disable(0),
+         wep(1),
+         wpa-psk(2),
+         wpa2-psk(3),
+         wpa-wpa2-psk(4),
+         wpa-enterprise(5),
+         wpa2-enterprise(6),
+         wpa-wpa2-enterprise(7)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+         "Using encryption can help secure your wireless network.
+          Select an encrytpion mode that is supported by all network
+          devices on your wireless network."
+     ::= { arrisWrmDevWlanApSecuConfigEntry 2 }
+
+arrisWrmDevWlanApSecuConfigWep OBJECT-TYPE
+     SYNTAX INTEGER {
+     	 open(1),
+     	 share(2),
+         auto(3)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+         "WEP (Wired Equivalent Privacy) was the standard for wireless encryption.
+          WEP requires you to enter hex digits (0~9, A~F), or generate the key by
+          using the PassPhrase/Generate method."
+     ::= { arrisWrmDevWlanApSecuConfigEntry 3 }
+
+arrisWrmDevWlanApSecuConfigWepK-type OBJECT-TYPE
+     SYNTAX INTEGER {
+         bit-64(1),
+         bit-128(2)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+         "Configure WEP encryption to be either 128 or 64 bit encryption."
+     ::= { arrisWrmDevWlanApSecuConfigEntry 4 }
+
+arrisWrmDevWlanApSecuConfigWepK-index OBJECT-TYPE
+     SYNTAX Integer32
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION "Select between WEP keys 1-4"
+     ::= { arrisWrmDevWlanApSecuConfigEntry 5 }
+
+arrisWrmDevWlanApSecuConfigWepK-gen OBJECT-TYPE
+     SYNTAX OCTET STRING
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+        "Passphrase used to generate WEP key.  Resulting WEP key will
+         be shown in arrisWrmDevWlanApSecuConfigWepK-man"
+     ::= { arrisWrmDevWlanApSecuConfigEntry 6 }
+
+arrisWrmDevWlanApSecuConfigWepK-man OBJECT-TYPE
+     SYNTAX OCTET STRING
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION "Manually enter WEP key"
+     ::= { arrisWrmDevWlanApSecuConfigEntry 7 }
+
+arrisWrmDevWlanApSecuConfigWpaEncry OBJECT-TYPE
+     SYNTAX INTEGER {
+        tkip(0),
+        aes(1),
+        tkip-aes(2)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+         "Encryption Technique: If using WPA-PSK, select the desired encryption
+          method - TKIP or AES. WPA2-PSK always uses AES encryption.
+          WPA-PSK + WPA2-PSK uses TKIP + AES."
+     ::= { arrisWrmDevWlanApSecuConfigEntry 8 }
+
+arrisWrmDevWlanApSecuConfigWpaphrase OBJECT-TYPE
+     SYNTAX OCTET STRING
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+         "Pre-shared Key (PSK): All clients must use the same PSK. The PSK can be any
+          word or phrase from 8 up to 63 characters. The passphrase is case-sensitive
+          (.n. is different than .N..) Use a non-obvious word or phrase; the easiest
+          way to break your security is for someone to guess your PSK."
+     ::= { arrisWrmDevWlanApSecuConfigEntry 9 }
+
+arrisWrmDevWlanApSecuConfigWpaObsecu OBJECT-TYPE
+     SYNTAX INTEGER {
+          enable(1),
+          disable(2)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+         "Used for the WebGUI: When enabled, the Password (PSK) displays '*' for all characters."
+     ::= { arrisWrmDevWlanApSecuConfigEntry 10 }
+
+arrisWrmDevWlanApSecuConfigWpa2phrase OBJECT-TYPE
+     SYNTAX OCTET STRING
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+         "Pre-shared Key (PSK): All clients must use the same PSK. The PSK can be any
+          word or phrase from 8 up to 63 characters. The passphrase is case-sensitive
+          (.n. is different than .N..) Use a non-obvious word or phrase; the easiest
+          way to break your security is for someone to guess your PSK."
+     ::= { arrisWrmDevWlanApSecuConfigEntry 11 }
+
+arrisWrmDevWlanApSecuConfigWpa2Obsecu OBJECT-TYPE
+     SYNTAX INTEGER {
+          enable(1),
+          disable(2)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+         "Used for the WebGUI: When enabled, the Password (PSK) displays '*' for all characters."
+     ::= { arrisWrmDevWlanApSecuConfigEntry 12 }
+
+arrisWrmDevWlanApSecu8021xConfigTable OBJECT-TYPE
+    SYNTAX SEQUENCE OF ArrisWrmDevWlanApSecu8021xConfigEntry
+    MAX-ACCESS not-accessible
+    STATUS current
+    DESCRIPTION
+        "This table contains MIB objects which control WLAN
+         security 8021x parameters,which covers WPA Enterprise."
+    ::= { arrisWrmDevWlan 5 }
+
+arrisWrmDevWlanApSecu8021xConfigEntry OBJECT-TYPE
+     SYNTAX      ArrisWrmDevWlanApSecu8021xConfigEntry
+     MAX-ACCESS  not-accessible
+     STATUS      current
+     DESCRIPTION
+         "This table contains MIB objects which control WLAN
+          security 8021x parameters,which covers WPA Enterprise."
+     INDEX { arrisWrmDevWlanApSecu8021xConfigIndex  }
+     ::= {  arrisWrmDevWlanApSecu8021xConfigTable 1 }
+
+ArrisWrmDevWlanApSecu8021xConfigEntry ::= SEQUENCE {
+         arrisWrmDevWlanApSecu8021xConfigIndex        INTEGER,
+         arrisWrmDevWlanApSecu8021xConfigServer       IpAddress,
+         arrisWrmDevWlanApSecu8021xConfigShareKey     OCTET STRING,
+         arrisWrmDevWlanApSecu8021xConfigRadiusPort   INTEGER
+     }
+
+arrisWrmDevWlanApSecu8021xConfigIndex OBJECT-TYPE
+     SYNTAX INTEGER
+     MAX-ACCESS read-only
+     STATUS current
+     DESCRIPTION
+         "The index value which uniquely identifies the
+     Radius Server selection to which this entry is applicable."
+     ::= { arrisWrmDevWlanApSecu8021xConfigEntry 1 }
+
+arrisWrmDevWlanApSecu8021xConfigServer OBJECT-TYPE
+     SYNTAX IpAddress
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+         "Primary Radius Server: This field is required. Enter the IP
+          address of the primaray Radius Server on your LAN."
+     ::= { arrisWrmDevWlanApSecu8021xConfigEntry 2 }
+
+arrisWrmDevWlanApSecu8021xConfigShareKey OBJECT-TYPE
+     SYNTAX OCTET STRING
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+         "Shared Key: Enter the desired value for the Shared Key.
+          This must match the value used on the Radius server. "
+     ::= { arrisWrmDevWlanApSecu8021xConfigEntry 3 }
+
+arrisWrmDevWlanApSecu8021xConfigRadiusPort OBJECT-TYPE
+     SYNTAX INTEGER
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+         "Radius Port: Enter the port number used for connections
+          to the Radius Server.If unsure what the Radius server port
+          number is, the default Radius port number is 1812 (as
+          specified in RFC 2138). "
+     ::= { arrisWrmDevWlanApSecu8021xConfigEntry 4 }
+
+arrisWrmDevWlanApPowerLevel OBJECT-TYPE
+     SYNTAX INTEGER {
+         high(0),
+         middle(1),
+         low(2)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+         "adjust wireless power level."
+     ::= { arrisWrmDevWlan 6 }
+
+arrisWrmDevWlanApIsolationInter OBJECT-TYPE
+     SYNTAX INTEGER {
+         enable(1),
+         disable(2)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+         "Disable/Enable access to allow that the WLAN PCs in the same SSID can
+          communicate with each other."
+     ::= { arrisWrmDevWlan 7 }
+
+arrisWrmDevWlanApIsolationExtra OBJECT-TYPE
+     SYNTAX INTEGER {
+         enable(1),
+         disable(2)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+         "Disable/Enable access to allow that the WLAN PCs in the different SSIDs
+          can communicate with each other."
+     ::= { arrisWrmDevWlan 8 }
+
+arrisWrmDevWlanQoSConfig OBJECT IDENTIFIER
+     ::= { arrisWrmDevWlan 9 }
+
+arrisWrmDevWlanQoSConfigEnable OBJECT-TYPE
+     SYNTAX INTEGER {
+         enable(1),
+         disable(2)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION " enable/disable QoS bandwidth control. "
+     ::= { arrisWrmDevWlanQoSConfig 1 }
+
+arrisWrmDevWlanQoSConfigTotalBandwidth OBJECT-TYPE
+     SYNTAX Integer32
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION " Router Wan Iface total bandwith: 100 - 100000 kbps"
+     ::= { arrisWrmDevWlanQoSConfig 2 }
+
+arrisWrmDevWlanQoSConfigHomeBandwidth OBJECT-TYPE
+     SYNTAX Integer32
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION " Router Lan/WLAN1 bandwith: 100 - 100000 kbps"
+     ::= { arrisWrmDevWlanQoSConfig 3 }
+
+arrisWrmDevWlanQoSConfigPrivateBandwidth OBJECT-TYPE
+     SYNTAX Integer32
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION " Router WLAN2 bandwith: 100 - 100000 kbps"
+     ::= { arrisWrmDevWlanQoSConfig 4 }
+
+arrisWrmDevWlanWPSConfig OBJECT IDENTIFIER
+     ::= { arrisWrmDevWlan 10 }
+
+arrisWrmDevWlanWPSConfigEnable OBJECT-TYPE
+     SYNTAX INTEGER {
+         enable(1),
+         disable(2)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION " enable/disable WPS function. "
+     ::= { arrisWrmDevWlanWPSConfig 1 }
+
+arrisWrmDevWlanWPSConfigState OBJECT-TYPE
+     SYNTAX INTEGER {
+         unconfigured(1),
+         configured(2)
+     }
+     MAX-ACCESS read-only
+     STATUS current
+     DESCRIPTION " When wireless security is configured or one WPS successfully link,
+     it shows Configured. Only after WTM552 factory default, it shows Unconfigured state."
+     ::= { arrisWrmDevWlanWPSConfig 2 }
+
+arrisWrmDevWlanWPSPBCStart OBJECT-TYPE
+     SYNTAX INTEGER {
+         true(1),
+         false(2)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+         "If set to True(1), the WRM will start WPS push button process mode.
+          When read, False(2) will always be returned.(similar to sdc set wlan wps pbc start).
+          And it will be in effect right now."
+     ::= { arrisWrmDevWlanWPSConfig 3 }
+
+arrisWrmDevWlanWPSEnrolleePIN OBJECT-TYPE
+     SYNTAX OCTET STRING (SIZE (8))
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+         "Enter the Enrollee PIN from WLAN card to WTM552 which as a Interal Register.
+         When read, it will always show none.And it will be in effect right now."
+     ::= { arrisWrmDevWlanWPSConfig 4 }
+
+arrisWrmDevWlanWPSDevicePIN OBJECT-TYPE
+     SYNTAX OCTET STRING (SIZE (8))
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION " Get or Set WTM552 device PIN. "
+     ::= { arrisWrmDevWlanWPSConfig 5 }
+
+--
+-- The following group describes the MIB objects which control WAN parameters
+-- in the WRM device
+--
+arrisWrmDevWanConnType OBJECT-TYPE
+     SYNTAX INTEGER {
+          direct(0),
+          pppoe(1),
+          l2tp(2)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+         "Select WAN connection type.  Using direct(0) will use
+         arrisWrmDevWanIpType to determine connection type."
+     ::= { arrisWrmDevWan 1 }
+
+arrisWrmDevWanIpType OBJECT-TYPE
+     SYNTAX INTEGER {
+          dynamic(0),
+          fix(1)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+         " only used when arrisWrmDevWanConnType is direct. "
+     ::= { arrisWrmDevWan 2 }
+
+arrisWrmDevWanIpAddr OBJECT-TYPE
+     SYNTAX IpAddress
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+          "Always showing WRM current Wan IP address; setting value is used
+           to config static mode Wan IP. "
+     ::= { arrisWrmDevWan 3 }
+
+arrisWrmDevWanIpMask OBJECT-TYPE
+     SYNTAX IpAddress
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+          "Always showing WRM current Wan Mask; setting value is used
+           to config static mode Wan Mask. "
+     ::= { arrisWrmDevWan 4 }
+
+arrisWrmDevWanIpGw OBJECT-TYPE
+     SYNTAX IpAddress
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+          "Always showing WRM current Wan Gateway; setting value is used
+           to config static mode Wan Gateway. "
+     ::= { arrisWrmDevWan 5 }
+
+
+arrisWrmDevWanConnAccount OBJECT-TYPE
+     SYNTAX OCTET STRING
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+         " mainly used for PPPoE, L2TP, L2TP_BCP Wan Connection mode. "
+     ::= { arrisWrmDevWan 6 }
+
+arrisWrmDevWanConnPwd OBJECT-TYPE
+     SYNTAX OCTET STRING
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+         " mainly used for PPPoE, L2TP, L2TP_BCP Wan Connection mode. "
+     ::= { arrisWrmDevWan 7 }
+
+arrisWrmDevWanTypeL2tpSrv OBJECT-TYPE
+     SYNTAX OCTET STRING
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+         " L2tp Server IP or domain "
+
+     ::= { arrisWrmDevWan 8 }
+
+arrisWrmDevWanMTU OBJECT-TYPE
+     SYNTAX Integer32
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+         " 576-1500 "
+     ::= { arrisWrmDevWan 9 }
+
+arrisWrmDevWanDialOnDemand OBJECT-TYPE
+     SYNTAX INTEGER {
+         enable(1),
+         disable(2)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+         " mainly used for PPPoE and L2tp Connection mode. "
+     ::= { arrisWrmDevWan 10 }
+
+arrisWrmDevWanIdleTime OBJECT-TYPE
+     SYNTAX Integer32(0..99)
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+         " mainly used for PPPoE and L2tp Connection mode. "
+     ::= { arrisWrmDevWan 11 }
+
+arrisWrmDevWanHostName OBJECT-TYPE
+     SYNTAX OCTET STRING (SIZE (0..39))
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+         "Some dynamic connection types may require a Host Name. You can enter your Host Name
+          if you were assigned one by your ISP. "
+     ::= { arrisWrmDevWan 12 }
+
+arrisWrmDevWanL2tpBcp OBJECT IDENTIFIER
+     ::= { arrisWrmDevWan 13 }
+
+arrisWrmDevWanL2tpBcpEnable OBJECT-TYPE
+     SYNTAX INTEGER {
+         enable(1),
+         disable(2)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION "L2TP BCP enable/disable"
+     ::= { arrisWrmDevWanL2tpBcp 1 }
+
+arrisWrmDevWanL2tpBcpVLanTag OBJECT-TYPE
+     SYNTAX INTEGER {
+         enable(1),
+         disable(2)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION "L2TP BCP VLAN Tag enable/disable"
+     ::= { arrisWrmDevWanL2tpBcp 2 }
+
+arrisWrmDevWanL2tpBcpVLanID OBJECT-TYPE
+     SYNTAX Integer32 (0..4096)
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION "VLAN ID"
+     ::= { arrisWrmDevWanL2tpBcp 3 }
+
+arrisWrmDevWanL2tpBcpTunPktDir OBJECT-TYPE
+     SYNTAX INTEGER {
+         wlan2ndssid(0),
+         allLanAndWLan(1)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+        " When this object value is wlan2ndssid(0), means all wlan
+     2nd SSID's packets are transmitted to L2TP tunnel.When  the
+     value is allLanAndWLan(1), menas all lan and wlan packets are
+ 	 transmitted to L2TP tunnel."
+     ::= { arrisWrmDevWanL2tpBcp 4 }
+
+arrisWrmDevWanDnsTable OBJECT-TYPE
+    SYNTAX SEQUENCE OF ArrisWrmDevWanDnsEntry
+    MAX-ACCESS not-accessible
+    STATUS current
+    DESCRIPTION
+        "This table contains MIB objects which control WAN DNS
+         parameters,which are particular layer wan interface
+         dns information."
+    ::= { arrisWrmDevWan 14 }
+
+arrisWrmDevWanDnsEntry OBJECT-TYPE
+     SYNTAX      ArrisWrmDevWanDnsEntry
+     MAX-ACCESS  not-accessible
+     STATUS      current
+     DESCRIPTION
+         "This table contains MIB objects which control WAN DNS
+          parameters,which are particular layer wan interface
+          dns information."
+     INDEX { arrisWrmDevWanDnsIndex  }
+     ::= {  arrisWrmDevWanDnsTable 1 }
+
+ArrisWrmDevWanDnsEntry ::= SEQUENCE {
+         arrisWrmDevWanDnsIndex         INTEGER,
+         arrisWrmDevWanDnsType          INTEGER,
+         arrisWrmDevWanDnsAddr          IpAddress,
+         arrisWrmDevWanDnsAddr1         IpAddress,
+         arrisWrmDevWanDnsAddr2         IpAddress
+     }
+
+arrisWrmDevWanDnsIndex OBJECT-TYPE
+     SYNTAX INTEGER
+     MAX-ACCESS read-only
+     STATUS current
+     DESCRIPTION
+         "The index value which uniquely identifies the
+     DNS layer NO. to which this entry is applicable."
+     ::= { arrisWrmDevWanDnsEntry 1 }
+
+arrisWrmDevWanDnsType OBJECT-TYPE
+     SYNTAX INTEGER {
+          dynamic(0),
+          fix(1)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION "Toggle between getting DNS info dynamically or statically"
+     ::= { arrisWrmDevWanDnsEntry 2 }
+
+arrisWrmDevWanDnsAddr OBJECT-TYPE
+     SYNTAX IpAddress
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION "DNS Address"
+     ::= { arrisWrmDevWanDnsEntry 3 }
+
+arrisWrmDevWanDnsAddr1 OBJECT-TYPE
+     SYNTAX IpAddress
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION "DNS Address"
+     ::= { arrisWrmDevWanDnsEntry 4 }
+
+arrisWrmDevWanDnsAddr2 OBJECT-TYPE
+     SYNTAX IpAddress
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION "DNS Address"
+     ::= { arrisWrmDevWanDnsEntry 5 }
+
+arrisWrmDevWanAutoDetect OBJECT-TYPE
+     SYNTAX INTEGER {
+         enable(1),
+         disable(2)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION "Auto Detect WAN status.
+        Enable will loop Detection gateway response."
+    ::= { arrisWrmDevWan 15 }
+
+--
+-- The following group describes the MIB objects which control Remote Management parameters
+-- in the WRM device.
+--
+
+arrisWrmDevRmEnable OBJECT-TYPE
+     SYNTAX INTEGER {
+          enable(1),
+          disable(2)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION "Enable/disable Webpage remote management (i.e. access from WAN interface)."
+     ::= { arrisWrmDevRm 1 }
+arrisWrmDevRmIp OBJECT-TYPE
+     SYNTAX IpAddress
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION "optional remote management is restricted to this IP address"
+     ::= { arrisWrmDevRm 2 }
+arrisWrmDevRmPassword OBJECT-TYPE
+    SYNTAX OCTET STRING (SIZE (0..15))
+    MAX-ACCESS read-write
+    STATUS current
+    DESCRIPTION "Set password of remote access.
+                 Only access from the WAN when it works."
+    ::= { arrisWrmDevRm 3 }
+arrisWrmDevRmPasswordStatus OBJECT-TYPE
+     SYNTAX INTEGER {
+          enable(1),
+          disable(2)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION "Enable/disable remote management password. Default is disable."
+     ::= { arrisWrmDevRm 4 }
+
+--
+-- The following group describes the MIB objects which control Client IP filter parameters
+--
+
+arrisWrmDevAclTable OBJECT-TYPE
+     SYNTAX SEQUENCE OF ArrisWrmDevAclEntry
+     MAX-ACCESS not-accessible
+     STATUS current
+     DESCRIPTION "Client IP Filter Table"
+     ::= { arrisWrmDevAcl 1 }
+arrisWrmDevAclEntry OBJECT-TYPE
+     SYNTAX      ArrisWrmDevAclEntry
+     MAX-ACCESS  not-accessible
+     STATUS      current
+     DESCRIPTION "Client IP Filter Table"
+     INDEX { arrisWrmDevAclIndex }
+     ::= {  arrisWrmDevAclTable 1 }
+
+ArrisWrmDevAclEntry ::= SEQUENCE {
+         arrisWrmDevAclIndex            Integer32,
+         arrisWrmDevAclEnableStatus     INTEGER,
+         arrisWrmDevAclLowIp            Integer32,
+         arrisWrmDevAclHighIp           Integer32,
+         arrisWrmDevAclLowPort          Integer32,
+         arrisWrmDevAclHighPort         Integer32,
+         arrisWrmDevAclProtocol         INTEGER,
+         arrisWrmDevAclBlock            INTEGER,
+         arrisWrmDevAclDayIndex         INTEGER,
+         arrisWrmDevAclTimeIndex        Integer32,
+         arrisWrmDevAclDayIndex2        INTEGER,
+         arrisWrmDevAclTimeIndex2       Integer32
+     }
+
+arrisWrmDevAclIndex OBJECT-TYPE
+     SYNTAX  Integer32
+     MAX-ACCESS read-only
+     STATUS current
+     DESCRIPTION "Index of table entry"
+     ::= { arrisWrmDevAclEntry 1 }
+
+arrisWrmDevAclEnableStatus OBJECT-TYPE
+     SYNTAX  INTEGER{
+          enable(1),
+          disable(2)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION "Enable/disable for this table entry"
+     ::= { arrisWrmDevAclEntry 2 }
+
+arrisWrmDevAclLowIp OBJECT-TYPE
+     SYNTAX  Integer32 (0..255)
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+         "Between arrisWrmDevAclHighIp and arrisWrmDevAclLowIp lies the range of IP addresses
+          that this client ip filter entry applies to."
+     ::= { arrisWrmDevAclEntry 3 }
+arrisWrmDevAclHighIp OBJECT-TYPE
+     SYNTAX  Integer32 (0..255)
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+         "Between arrisWrmDevAclHighIp and arrisWrmDevAclLowIp lies the range of IP addresses
+          that this client ip filter entry applies to."
+     ::= { arrisWrmDevAclEntry 4 }
+arrisWrmDevAclLowPort OBJECT-TYPE
+     SYNTAX  Integer32
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+         "Between arrisWrmDevAclHighPort and arrisWrmDevAclLowPort lies the range of port numbers
+          that this client ip filter entry applies to."
+     ::= { arrisWrmDevAclEntry 5 }
+arrisWrmDevAclHighPort OBJECT-TYPE
+     SYNTAX  Integer32
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+         "Between arrisWrmDevAclHighPort and arrisWrmDevAclLowPort lies the range of port numbers
+          that this client ip filter entry applies to."
+     ::= { arrisWrmDevAclEntry 6 }
+arrisWrmDevAclProtocol OBJECT-TYPE
+     SYNTAX  INTEGER {
+          tcp(1),
+          udp(2),
+          both(3)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION "Protocol this table entry applies to"
+     ::= { arrisWrmDevAclEntry 7 }
+arrisWrmDevAclBlock OBJECT-TYPE
+     SYNTAX  INTEGER {
+          always(0),
+          bySchedule(1)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION "Block time for this table entry"
+     ::= { arrisWrmDevAclEntry 8 }
+arrisWrmDevAclDayIndex OBJECT-TYPE
+     SYNTAX  INTEGER{
+        sunday(0),
+        monday(1),
+        tuesday(2),
+        wednesday(3),
+        thursday(4),
+        friday(5),
+        saturday(6),
+        everyday(7),
+        workday(8),
+        weekend(9)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION "This filter begins to apply from this day"
+     ::= { arrisWrmDevAclEntry 9 }
+arrisWrmDevAclTimeIndex OBJECT-TYPE
+     SYNTAX  Integer32
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+       "12:AM(0),
+        1:AM(1),
+        2:AM(2),
+        3:AM(3),
+        4:AM(4),
+        5:AM(5),
+        6:AM(6),
+        7:AM(7),
+        8:AM(8),
+        9:AM(9),
+        10:AM(10),
+        11:AM(11),
+        12:PM(12),
+        1:PM(13),
+        2:PM(14),
+        3:PM(15),
+        4:PM(16),
+        5:PM(17),
+        6:PM(18),
+        7:PM(19),
+        8:PM(20),
+        9:PM(21),
+        10:PM(22),
+        11:PM(23)"
+     ::= { arrisWrmDevAclEntry 10 }
+arrisWrmDevAclDayIndex2 OBJECT-TYPE
+     SYNTAX  INTEGER{
+        sunday(0),
+        monday(1),
+        tuesday(2),
+        wednesday(3),
+        thursday(4),
+        friday(5),
+        saturday(6),
+        everyday(7),
+        workday(8),
+        weekend(9)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION "This filter continues to apply until this day"
+     ::= { arrisWrmDevAclEntry 11 }
+arrisWrmDevAclTimeIndex2 OBJECT-TYPE
+     SYNTAX  Integer32
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+       "12:AM(0),
+        1:AM(1),
+        2:AM(2),
+        3:AM(3),
+        4:AM(4),
+        5:AM(5),
+        6:AM(6),
+        7:AM(7),
+        8:AM(8),
+        9:AM(9),
+        10:AM(10),
+        11:AM(11),
+        12:PM(12),
+        1:PM(13),
+        2:PM(14),
+        3:PM(15),
+        4:PM(16),
+        5:PM(17),
+        6:PM(18),
+        7:PM(19),
+        8:PM(20),
+        9:PM(21),
+        10:PM(22),
+        11:PM(23)"
+     ::= { arrisWrmDevAclEntry 12 }
+--
+-- The following group describes the MIB objects which control RIPv2 parameters
+-- in the WRM device, that are not covered by the RFC rip2 MIBs
+--
+
+arrisWrmDevRip2Entry OBJECT-TYPE
+     SYNTAX      ArrisWrmDevRip2Entry
+     MAX-ACCESS  not-accessible
+     STATUS      current
+     DESCRIPTION
+         "This table contains MIB objects which control RIPv2 parameters
+          in the WRM device that are not covered by 'rip2IfConfTable'."
+     INDEX { arrisWrmDevRip2KeyId  }
+     ::= {  arrisWrmDevRip2Table 1 }
+
+ArrisWrmDevRip2Entry ::= SEQUENCE {
+         arrisWrmDevRip2KeyId             Integer32,
+         arrisWrmDevRip2AdvertisementInt  Integer32,
+         arrisWrmDevRipTransmitStatus     INTEGER,
+         arrisWrmDevRipReceiveStatus      INTEGER
+     }
+
+arrisWrmDevRip2KeyId OBJECT-TYPE
+     SYNTAX  Integer32
+     MAX-ACCESS read-create
+     STATUS current
+     DESCRIPTION
+         "An unsigned 8-bit field that contains the Key Identifier
+          or Key-ID. This identifies the key used to create the
+          Authentication Data for this RIP-2 message whenever
+          rip2IfConfAuthType has a value other than noAuthentication."
+     ::= { arrisWrmDevRip2Entry 1 }
+
+arrisWrmDevRip2AdvertisementInt OBJECT-TYPE
+     SYNTAX  Integer32
+     MAX-ACCESS read-create
+     STATUS current
+     DESCRIPTION
+         "An unsigned 16-bit field that contains the interval in seconds
+          between transmits of routing table updates."
+     ::= { arrisWrmDevRip2Entry 2 }
+
+arrisWrmDevRipTransmitStatus OBJECT-TYPE
+     SYNTAX INTEGER {
+         active(1),
+         inactive(2)
+     }
+     MAX-ACCESS read-only
+     STATUS current
+     DESCRIPTION
+         "Active when the WRM is actively transmitting RIP updates.  In order for
+          arrisWrmDevRipTransmitStatus to be active, rip2IfConfSend must be active
+          and arrisWrmDevNATEnable must be disabled."
+     ::= { arrisWrmDevRip2Entry 3 }
+
+
+arrisWrmDevRipReceiveStatus OBJECT-TYPE
+     SYNTAX INTEGER {
+         active(1),
+         inactive(2)
+     }
+     MAX-ACCESS read-only
+     STATUS current
+     DESCRIPTION
+         "Active when the WRM is actively transmitting RIP updates.  In order for
+          arrisWrmDevRipReceiveStatus to be active, rip2IfConfReceive must be active."
+     ::= { arrisWrmDevRip2Entry 4 }
+
+--
+-- The following group describes the MIB objects which define parameters from Attached Devices.
+--
+
+arrisWrmDevAdevEntry OBJECT-TYPE
+     SYNTAX      ArrisWrmDevAdevEntry
+     MAX-ACCESS  not-accessible
+     STATUS      current
+     DESCRIPTION "This table shows the attached devices detected by the WRM."
+     INDEX { arrisWrmDevAdevMAC  }
+     ::= {  arrisWrmDevAdevTable 1 }
+
+ArrisWrmDevAdevEntry ::= SEQUENCE {
+         arrisWrmDevAdevMAC             OCTET STRING,
+         arrisWrmDevAdevIpAddr             IpAddress,
+         arrisWrmDevAdevInterface       OCTET STRING
+     }
+
+arrisWrmDevAdevMAC OBJECT-TYPE
+     SYNTAX  OCTET STRING
+     MAX-ACCESS read-only
+     STATUS current
+     DESCRIPTION "Mac address of the attached device"
+     ::= { arrisWrmDevAdevEntry 1 }
+
+arrisWrmDevAdevIpAddr OBJECT-TYPE
+     SYNTAX  IpAddress
+     MAX-ACCESS read-only
+     STATUS current
+     DESCRIPTION "IP address of the attached device"
+     ::= { arrisWrmDevAdevEntry 2 }
+
+arrisWrmDevAdevInterface OBJECT-TYPE
+     SYNTAX  OCTET STRING
+     MAX-ACCESS read-only
+     STATUS current
+     DESCRIPTION "Interface from which this device was detected"
+     ::= { arrisWrmDevAdevEntry 3 }
+
+--
+-- The following group describes the MIB objects which control DDNS parameters
+--
+
+arrisWrmDevDdnsService OBJECT-TYPE
+     SYNTAX INTEGER {
+         none(0),
+         dyndns(1),
+         dtdns(2)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION "Dynamic DNS service"
+     ::= { arrisWrmDevDdns 1 }
+
+arrisWrmDevDdnsStatus OBJECT-TYPE
+     SYNTAX OCTET STRING
+     MAX-ACCESS read-only
+     STATUS current
+     DESCRIPTION "Shows WRM DDNS Link status."
+     ::= { arrisWrmDevDdns 2 }
+
+arrisWrmDevDdnsUser OBJECT-TYPE
+     SYNTAX OCTET STRING
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION "Dynamic DNS user"
+     ::= { arrisWrmDevDdns 3 }
+arrisWrmDevDdnsPassword OBJECT-TYPE
+     SYNTAX OCTET STRING
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION "Dynamic DNS password"
+     ::= { arrisWrmDevDdns 4 }
+arrisWrmDevDdnsDomain1 OBJECT-TYPE
+     SYNTAX OCTET STRING
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION "Dynamic DNS Domain"
+     ::= { arrisWrmDevDdns 5 }
+arrisWrmDevDdnsdomain2 OBJECT-TYPE
+     SYNTAX OCTET STRING
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION "Dynamic DNS Domain"
+     ::= { arrisWrmDevDdns 6 }
+arrisWrmDevDdnsdomain3 OBJECT-TYPE
+     SYNTAX OCTET STRING
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION "Dynamic DNS Domain"
+     ::= { arrisWrmDevDdns 7 }
+
+--
+-- The following group describes the MIB objects which control DMZ parameters
+--
+
+arrisWrmDevDmzEnable OBJECT-TYPE
+     SYNTAX INTEGER {
+         enable(1),
+         disable(2)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+         "The DMZ feature allows you to specify one computer on your network to be exposed to
+          the Internet without firewall protection. This may be necessary if the NAT firewall
+          is causing problems with an application such as Internet gaming or video conferencing.
+          Use DMZ only when necessary because the computer in the DMZ is not protected from hacker attacks."
+     ::= { arrisWrmDevDmz 1 }
+
+arrisWrmDevDmzAddr OBJECT-TYPE
+     SYNTAX IpAddress
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+         "To put a computer in the DMZ, enter the last digits of its IP address in the IP field and enable dmz.
+          WRM requires a save for the change to take effect. If you are using multiple static WAN IP addresses,
+          you can select which WAN IP address the DMZ host is directed to. Enter the WAN IP address you want the
+          DMZ host to direct to."
+     ::= { arrisWrmDevDmz 2 }
+
+arrisWrmDevHpg OBJECT-TYPE
+     SYNTAX INTEGER {
+          enable(1),
+          disable(2)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION "enable/disable the WRM WebGUI debug webpages"
+     ::= { arrisWrmDevOperationalSetup 13 }
+
+--
+-- The following group describes the MIB object which control Logs and notifications
+--
+arrisWrmDevLogOutgoing OBJECT-TYPE
+     SYNTAX INTEGER {
+          enable(1),
+          disable(2)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION "Enable/disable outgoing (internet) connection logs"
+         ::= { arrisWrmDevLog 1 }
+arrisWrmDevLogAccessControl OBJECT-TYPE
+     SYNTAX INTEGER {
+          enable(1),
+          disable(2)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION "Enable/disable Access Control Logs"
+         ::= { arrisWrmDevLog 2 }
+arrisWrmDevLogDos OBJECT-TYPE
+     SYNTAX INTEGER {
+          enable(1),
+          disable(2)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION "Enable/disable DoS (Denial of Service) attacks"
+         ::= { arrisWrmDevLog 3 }
+
+arrisWrmDevLogMail OBJECT-TYPE
+     SYNTAX INTEGER {
+          full(0),
+          scheduled(1)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION "0(full) sends an email only when log is full.  1(scheduled) sends email based on schedule."
+     ::= { arrisWrmDevLog 4}
+arrisWrmDevLogMailTitle OBJECT-TYPE
+     SYNTAX OCTET STRING
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION "Specifies the Subject line in the log email."
+     ::= { arrisWrmDevLog 5 }
+arrisWrmDevLogMailPort OBJECT-TYPE
+     SYNTAX Integer32
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION "Default: 25"
+     ::= { arrisWrmDevLog 6 }
+
+arrisWrmDevLogMailConnLog OBJECT-TYPE
+     SYNTAX INTEGER {
+          enable(1),
+          disable(2)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION "Email Logs: enable to send connection log emails"
+     ::= { arrisWrmDevLog 7 }
+arrisWrmDevLogMailAccessLog OBJECT-TYPE
+     SYNTAX INTEGER {
+          enable(1),
+          disable(2)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION "Email Logs: enable to send access control log emails"
+     ::= { arrisWrmDevLog 8 }
+
+arrisWrmDevLogMailAddr OBJECT-TYPE
+     SYNTAX OCTET STRING
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION "Email address to send log to."
+     ::= { arrisWrmDevLog 9 }
+
+arrisWrmDevLogMailSmtp-Ip OBJECT-TYPE
+     SYNTAX IpAddress
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION "SMTP Server IP Address.
+                  If this is specified, the SMTP Server domain name is not needed."
+     ::= { arrisWrmDevLog 10 }
+arrisWrmDevLogMailSmtp-Name OBJECT-TYPE
+     SYNTAX OCTET STRING
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION "SMTP Server's domain name.
+                  If this is specified, the SMTP Server IP address is not needed."
+     ::= { arrisWrmDevLog 11 }
+arrisWrmDevLogMailAlert OBJECT-TYPE
+     SYNTAX INTEGER {
+          enable(1),
+          disable(2)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION " Immediately send log email."
+     ::= { arrisWrmDevLog 12 }
+
+arrisWrmDevLogSchDay OBJECT-TYPE
+     SYNTAX INTEGER {
+          everySunday(0),
+          everyMonday(1),
+          everyTuesday(2),
+          everyWednesday(3),
+          everyThursday(4),
+          everyFriday(5),
+          everySaturday(6),
+          everyWeekend(7),
+          everyDay(8)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION "Scheduled day to send log email."
+     ::= { arrisWrmDevLog 13 }
+arrisWrmDevLogSchHour OBJECT-TYPE
+     SYNTAX Integer32
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION "Scheduled hour to send log email.  Valid input range is 0-24:
+        0:AM(0),
+        1:AM(1),
+        2:AM(2),
+        3:AM(3),
+        4:AM(4),
+        5:AM(5),
+        6:AM(6),
+        7:AM(7),
+        8:AM(8),
+        9:AM(9),
+        10:AM(10),
+        11:AM(11),
+        12:AM(12),
+        1:PM(13),
+        2:PM(14),
+        3:PM(15),
+        4:PM(16),
+        5:PM(17),
+        6:PM(18),
+        7:PM(19),
+        8:PM(20),
+        9:PM(21),
+        10:PM(22),
+        11:PM(23),
+        12:PM(24),
+     "
+     ::= { arrisWrmDevLog 14 }
+
+--
+-- The following group describes the MIB object which control Mac Address Filtering
+--
+
+arrisWrmDevMfEnable OBJECT-TYPE
+     SYNTAX INTEGER {
+          enable(1),
+          disable(2)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION "Shows Mac Address Filtering function status.Only disable(2) can
+     set for WRM customer normal access."
+     ::= { arrisWrmDevMf 1 }
+
+arrisWrmDevMfTable OBJECT-TYPE
+     SYNTAX SEQUENCE OF ArrisWrmDevMfEntry
+     MAX-ACCESS not-accessible
+     STATUS current
+     DESCRIPTION "Mac address Filtering Table"
+     ::= { arrisWrmDevMf 2 }
+arrisWrmDevMfEntry OBJECT-TYPE
+     SYNTAX      ArrisWrmDevMfEntry
+     MAX-ACCESS  not-accessible
+     STATUS      current
+     DESCRIPTION "Mac address Filtering entry"
+     INDEX { arrisWrmDevMfID }
+     ::= {  arrisWrmDevMfTable 1 }
+ArrisWrmDevMfEntry ::= SEQUENCE {
+         arrisWrmDevMfID           Integer32,
+         arrisWrmDevMfBlockStatus  INTEGER,
+         arrisWrmDevMfMacAddr      OCTET STRING
+     }
+arrisWrmDevMfID OBJECT-TYPE
+     SYNTAX  Integer32
+     MAX-ACCESS read-only
+     STATUS current
+     DESCRIPTION "entry ID"
+     ::= { arrisWrmDevMfEntry 1 }
+arrisWrmDevMfBlockStatus OBJECT-TYPE
+     SYNTAX  INTEGER {
+         allow(0),
+         block(1)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION "Allow or Block this entry"
+     ::= { arrisWrmDevMfEntry 2 }
+arrisWrmDevMfMacAddr OBJECT-TYPE
+     SYNTAX  OCTET STRING
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION "Mac Address to be filtered"
+     ::= { arrisWrmDevMfEntry 3 }
+
+--
+-- The following group describes the MIB object which control Webpage password
+--
+
+arrisWrmDevPwd OBJECT-TYPE
+     SYNTAX OCTET STRING
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION "WRM WebGUI password"
+     ::= { arrisWrmDevOperationalSetup 17 }
+
+--
+-- The following group describes the MIB object which relate to the Provision File
+--
+
+arrisWrmDevProvStatus OBJECT-TYPE
+     SYNTAX Integer32
+     MAX-ACCESS read-only
+     STATUS current
+     DESCRIPTION
+     "-7: Error: Unknow
+      -6: Error: Not enough Memory
+      -5: Error: Host not found
+      -4: Error: File not found
+ 	  -3: Error: Failed during Provision File Download
+ 	  -2: Error: No TFTP host specified
+ 	  -1: Error: No Provision File specified
+ 	   0: OK
+ 	   1: Error found in Provision File"
+     ::= { arrisWrmDevProvf 1 }
+
+arrisWrmDevProvFileName OBJECT-TYPE
+     SYNTAX OCTET STRING
+     MAX-ACCESS read-only
+     STATUS current
+     DESCRIPTION "Contains a string with the provision file name."
+     ::= { arrisWrmDevProvf 2 }
+
+arrisWrmDevProvDLTime OBJECT-TYPE
+     SYNTAX OCTET STRING
+     MAX-ACCESS read-only
+     STATUS current
+     DESCRIPTION "Contains the Time of Day when the file was downloaded."
+     ::= { arrisWrmDevProvf 3 }
+
+arrisWrmDevProvDone OBJECT-TYPE
+     SYNTAX INTEGER {
+         true(1),
+         false(2)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION "Similar to CLI comand sdc set provf run. If set to True(1), the WRM will
+     implement TFTP provision right now. When read, False(2) will always be returned."
+     ::= { arrisWrmDevProvf 4 }
+--
+-- The following group describes the MIB objects which control Special Applications
+--
+arrisWrmDevSapDelete OBJECT-TYPE
+     SYNTAX OCTET STRING
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION "Simply delete one entry Special Application."
+     ::= { arrisWrmDevSap 1 }
+
+arrisWrmDevSapTable OBJECT-TYPE
+     SYNTAX SEQUENCE OF ArrisWrmDevSapEntry
+     MAX-ACCESS not-accessible
+     STATUS current
+     DESCRIPTION "Secial Applications Table"
+     ::= { arrisWrmDevSap 2 }
+
+arrisWrmDevSapEntry OBJECT-TYPE
+     SYNTAX      ArrisWrmDevSapEntry
+     MAX-ACCESS  not-accessible
+     STATUS      current
+     DESCRIPTION "Secial Applications Entry"
+     INDEX { arrisWrmDevSapIndex }
+     ::= {  arrisWrmDevSapTable 1 }
+
+ArrisWrmDevSapEntry ::= SEQUENCE {
+         arrisWrmDevSapIndex          Integer32,
+         arrisWrmDevSapStatus         INTEGER,
+         arrisWrmDevSapName           OCTET STRING,
+         arrisWrmDevSapInType         INTEGER,
+         arrisWrmDevSapInStartPort    Integer32,
+         arrisWrmDevSapInEndPort      Integer32,
+         arrisWrmDevSapOutType        INTEGER,
+         arrisWrmDevSapOutStartPort   Integer32,
+         arrisWrmDevSapOutEndPort     Integer32
+     }
+arrisWrmDevSapIndex OBJECT-TYPE
+     SYNTAX  Integer32
+     MAX-ACCESS read-only
+     STATUS current
+     DESCRIPTION "index"
+     ::= { arrisWrmDevSapEntry 1 }
+arrisWrmDevSapStatus OBJECT-TYPE
+     SYNTAX  INTEGER {
+          enabled(1),
+          disabled(2)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION "enable/disable"
+     ::= { arrisWrmDevSapEntry 2 }
+arrisWrmDevSapName OBJECT-TYPE
+     SYNTAX  OCTET STRING
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION "Name to this entry describing application which it was intended for"
+     ::= { arrisWrmDevSapEntry 3 }
+
+arrisWrmDevSapInType OBJECT-TYPE
+     SYNTAX  INTEGER {
+          udp(0),
+          tcp(1)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION "Incoming port type: UDP/TCP"
+     ::= { arrisWrmDevSapEntry 4 }
+arrisWrmDevSapInStartPort OBJECT-TYPE
+     SYNTAX  Integer32
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION "Incoming start port"
+     ::= { arrisWrmDevSapEntry 5 }
+arrisWrmDevSapInEndPort OBJECT-TYPE
+     SYNTAX  Integer32
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION "Incoming end port"
+     ::= { arrisWrmDevSapEntry 6 }
+arrisWrmDevSapOutType OBJECT-TYPE
+     SYNTAX  INTEGER {
+          udp(0),
+          tcp(1)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION "Outgoing port type: UDP/TCP"
+     ::= { arrisWrmDevSapEntry 7 }
+arrisWrmDevSapOutStartPort OBJECT-TYPE
+     SYNTAX  Integer32
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION "Outgoing start port"
+     ::= { arrisWrmDevSapEntry 8 }
+arrisWrmDevSapOutEndPort OBJECT-TYPE
+     SYNTAX  Integer32
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION "Outgoing end port"
+     ::= { arrisWrmDevSapEntry 9 }
+
+
+--
+-- The following group describes the MIB objects which control General Security parameters
+--
+
+arrisWrmDevSecuReplyICMP OBJECT-TYPE
+     SYNTAX INTEGER {
+          enable(1),
+          disable(2)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION "enable/disable WRM response to pings"
+     ::= { arrisWrmDevSecu 1 }
+arrisWrmDevSecuIpSecPass OBJECT-TYPE
+     SYNTAX INTEGER {
+          enable(1),
+          disable(2)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION "enable/disable IpSec pass"
+     ::= { arrisWrmDevSecu 2 }
+arrisWrmDevSecuPptpPass OBJECT-TYPE
+     SYNTAX INTEGER {
+          enable(1),
+          disable(2)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION "enable/disable Pptp pass"
+     ::= { arrisWrmDevSecu 3 }
+arrisWrmDevSecuL2tpPass OBJECT-TYPE
+     SYNTAX INTEGER {
+          enable(1),
+          disable(2)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION "enable/disable L2tp pass"
+     ::= { arrisWrmDevSecu 4 }
+
+arrisWrmDevSecuFWEnable OBJECT-TYPE
+     SYNTAX INTEGER {
+          enable(1),
+          disable(2)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION "enable/disable WTM552 Firewall"
+     ::= { arrisWrmDevSecu 5 }
+
+--
+-- The following group describes the MIB objects which control Time Zone parameters
+--
+
+arrisWrmDevTzIndex OBJECT-TYPE
+     SYNTAX Integer32
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+       "(GMT-12:00) Eniwetok,Kwajalein(0),
+        (GMT-11:00) Midway Island, Samoa(1),
+        (GMT-10:00) Hawaii(2),
+        (GMT-09:00) Alaska(3),
+        (GMT-08:00) Pacific Time(US, Canada); Tijuana(4),
+        (GMT-07:00) Arizona (5),
+        (GMT-07:00) Mountain Time(US, Canada)(6),
+        (GMT-06:00) Central Time(US, Canada)(7),
+        (GMT-06:00) Mexico City, Tegucigalpa (8),
+        (GMT-06:00) Saskatchewan (9),
+        (GMT-05:00) Bogota, Lima, Quito (10),
+        (GMT-05:00) Eastern Time(US, Canada)(11),
+        (GMT-05:00) Indiana (East) (12),
+        (GMT-04:00) Atlantic Time (Canada) (13),
+        (GMT-04:00) Caracas, La Paz (14),
+        (GMT-04:00) Santiago (15),
+        (GMT-03:30) Newfoundland(16),
+        (GMT-03:00) Brasilia (17),
+        (GMT-03:00) Buenos Aires, Georgetown (18),
+        (GMT-02:00) Mid-Atlantic (19),
+        (GMT-01:00) Azores, Cape Verde Is. (20),
+        (GMT) Casablanca, Monrovia (21),
+        (GMT) Greenwich Mean Time : Edinburgh, London(22),
+        (GMT+01:00) Amsterdam, Berlin, Bern, Rome, Vienna(23),
+        (GMT+01:00) Belgrade, Budapest, Ljubljana, Prague(24),
+        (GMT+01:00) Brussels, Copenhagen, Madrid, Paris(25),
+        (GMT+01:00) Sarajevo, Skopje, Sofija, Warsaw(26),
+        (GMT+02:00) Athens, Istanbul, Minsk(27),
+        (GMT+02:00) Bucharest(28),
+        (GMT+02:00) Cairo(29),
+        (GMT+02:00) Harare, Pretoria(30),
+        (GMT+02:00) Helsinki, Riga, Tallinn(31),
+        (GMT+02:00) Israel(32),
+        (GMT+03:00) Baghdad, Kuwait, Riyadh(33),
+        (GMT+03:00) Moscow, St. Petersburg, Volgograd(34),
+        (GMT+03:00) Nairobi(35),
+        (GMT+03:30) Tehran(36),
+        (GMT+04:00) Abu Dhabi, Muscat(37),
+        (GMT+04:00) Baku, Tbilisi(38),
+        (GMT+04:30) Kabul(39),
+        (GMT+05:00) Ekaterinburg(40),
+        (GMT+05:00) Islamabad, Karachi, Tashkent(41),
+        (GMT+05:30) Bombay, Calcutta, Madras, New Delhi(42),
+        (GMT+06:00) Almaty, Dhaka(43),
+        (GMT+06:00) Colombo(44),
+        (GMT+07:00) Bangkok, Hanoi, Jakarta(45),
+        (GMT+08:00) Beijing, Chongqing, Hong Kong(46),
+        (GMT+08:00) Perth(47),
+        (GMT+08:00) Singapore(48),
+        (GMT+08:00) Taipei(49),
+        (GMT+09:00) Osaka, Sapporo, Tokyo(50),
+        (GMT+09:00) Seoul(51),
+        (GMT+09:00) Yakutsk(52),
+        (GMT+09:30) Adelaide(53),
+        (GMT+09:30) Darwin(54),
+        (GMT+10:00) Brisbane(55),
+        (GMT+10:00) Canberra, Melbourne, Sydney(56),
+        (GMT+10:00) Guam, Port Moresby(57),
+        (GMT+10:00) Hobart(58),
+        (GMT+10:00) Vladivostok(59),
+        (GMT+11:00) Magadan, Solomon Is., New Caledonia(60),
+        (GMT+12:00) Auckland, Wellington(61)"
+     ::= { arrisWrmDevTz 1 }
+
+arrisWrmDevTzDLSavings OBJECT-TYPE
+     SYNTAX INTEGER {
+          enable(1),
+          disable(2)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION "Automatically Adjust for Daylight Savings time"
+     ::= { arrisWrmDevTz 2 }
+--
+-- The following group describes the MIB objects which control UpnP parameters
+--
+
+arrisWrmDevUpnpEnable OBJECT-TYPE
+     SYNTAX INTEGER {
+          enable(1),
+          disable(2)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION "Enable/disable Universal Plug and Play"
+     ::= { arrisWrmDevUpnp 1 }
+--
+-- The following group describes the MIB objects which control URL parameters
+--
+
+arrisWrmDevUrlEnable OBJECT-TYPE
+     SYNTAX INTEGER {
+          enable(1),
+          disable(2)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION "url filter enable/disable"
+     ::= { arrisWrmDevUrl 1 }
+arrisWrmDevUrlAdd OBJECT-TYPE
+     SYNTAX OCTET STRING
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION "Used to add URLs to be filtered"
+     ::= { arrisWrmDevUrl 2 }
+arrisWrmDevUrlDel OBJECT-TYPE
+     SYNTAX OCTET STRING
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION "Used to delete URLs in the filter"
+     ::= { arrisWrmDevUrl 3 }
+
+arrisWrmDevUrlTable OBJECT-TYPE
+     SYNTAX SEQUENCE OF ArrisWrmDevUrlEntry
+     MAX-ACCESS not-accessible
+     STATUS current
+     DESCRIPTION
+         "This table contains MIB objects which control Internet access filter
+          the WRM device."
+     ::= { arrisWrmDevUrl 4 }
+
+arrisWrmDevUrlEntry OBJECT-TYPE
+     SYNTAX      ArrisWrmDevUrlEntry
+     MAX-ACCESS  not-accessible
+     STATUS      current
+     DESCRIPTION
+         "This table contains MIB objects which control Internet access filter
+          in the WRM device ."
+     INDEX { arrisWrmDevUrlIndex  }
+     ::= {  arrisWrmDevUrlTable 1 }
+
+ArrisWrmDevUrlEntry ::= SEQUENCE {
+         arrisWrmDevUrlIndex      Integer32,
+         arrisWrmDevUrlFilterStr  OCTET STRING
+     }
+
+arrisWrmDevUrlIndex OBJECT-TYPE
+     SYNTAX  Integer32
+     MAX-ACCESS read-only
+     STATUS current
+     DESCRIPTION "Index"
+     ::= { arrisWrmDevUrlEntry 1 }
+
+arrisWrmDevUrlFilterStr OBJECT-TYPE
+     SYNTAX  OCTET STRING
+     MAX-ACCESS read-only
+     STATUS current
+     DESCRIPTION
+         "Shows one URL filter string."
+     ::= { arrisWrmDevUrlEntry 2 }
+
+        arrisWrmDevUrlRulesTable OBJECT-TYPE
+            SYNTAX SEQUENCE OF ArrisWrmDevUrlRulesEntry
+            MAX-ACCESS not-accessible
+            STATUS current
+            DESCRIPTION
+                "URL filter rules enable.
+                 if all rules is disable that will always do URL filter."
+            ::= { arrisWrmDevUrl 5 }
+
+
+        arrisWrmDevUrlRulesEntry OBJECT-TYPE
+            SYNTAX ArrisWrmDevUrlRulesEntry
+            MAX-ACCESS not-accessible
+            STATUS current
+            DESCRIPTION
+                "This table show the URL rules."
+            INDEX { arrisWrmDevUrlRulesIndex }
+            ::= { arrisWrmDevUrlRulesTable 1 }
+
+
+        ArrisWrmDevUrlRulesEntry ::=
+            SEQUENCE {
+                arrisWrmDevUrlRulesIndex
+                    Integer32,
+                arrisWrmDevUrlRulesEnable
+                    INTEGER,
+                arrisWrmDevUrlRulesDayIndex
+                    INTEGER,
+                arrisWrmDevUrlRulesTimeIndex
+                    Integer32,
+                arrisWrmDevUrlRulesDayIndex2
+                    INTEGER,
+                arrisWrmDevUrlRulesTimeIndex2
+                    Integer32
+             }
+
+        arrisWrmDevUrlRulesIndex OBJECT-TYPE
+            SYNTAX Integer32
+            MAX-ACCESS read-only
+            STATUS current
+            DESCRIPTION
+                "Index of table entry."
+            ::= { arrisWrmDevUrlRulesEntry 1 }
+
+
+        arrisWrmDevUrlRulesEnable OBJECT-TYPE
+            SYNTAX INTEGER
+                {
+                enable(1),
+                disable(2)
+                }
+            MAX-ACCESS read-write
+            STATUS current
+            DESCRIPTION
+                "Enable/disable for this table entry."
+            ::= { arrisWrmDevUrlRulesEntry 2 }
+
+
+        arrisWrmDevUrlRulesDayIndex OBJECT-TYPE
+            SYNTAX INTEGER
+                {
+                sunday(0),
+                monday(1),
+                tuesday(2),
+                wednesday(3),
+                thursday(4),
+                friday(5),
+                saturday(6),
+                everyday(7),
+                workday(8),
+                weekend(9)
+                }
+            MAX-ACCESS read-write
+            STATUS current
+            DESCRIPTION
+                "This filter begins to apply from this day."
+            ::= { arrisWrmDevUrlRulesEntry 3 }
+
+
+        arrisWrmDevUrlRulesTimeIndex OBJECT-TYPE
+            SYNTAX Integer32 (0..24)
+            MAX-ACCESS read-write
+            STATUS current
+            DESCRIPTION
+                "This filter begins to apply from this time."
+            ::= { arrisWrmDevUrlRulesEntry 4 }
+
+
+        arrisWrmDevUrlRulesDayIndex2 OBJECT-TYPE
+            SYNTAX INTEGER
+                {
+                sunday(0),
+                monday(1),
+                tuesday(2),
+                wednesday(3),
+                thursday(4),
+                friday(5),
+                saturday(6),
+                everyday(7),
+                workday(8),
+                weekend(9)
+                }
+            MAX-ACCESS read-write
+            STATUS current
+            DESCRIPTION
+                "This filter continues to apply until this day."
+            ::= { arrisWrmDevUrlRulesEntry 5 }
+
+
+        arrisWrmDevUrlRulesTimeIndex2 OBJECT-TYPE
+            SYNTAX Integer32 (0..24)
+            MAX-ACCESS read-write
+            STATUS current
+            DESCRIPTION
+                "This filter continues to apply until this time."
+            ::= { arrisWrmDevUrlRulesEntry 6 }
+
+
+        arrisWrmDevUrlTrustIpEnable OBJECT-TYPE
+            SYNTAX INTEGER
+                {
+                enable(1),
+                disable(2)
+                }
+            MAX-ACCESS read-write
+            STATUS current
+            DESCRIPTION
+                "Trusted ip global enable.
+                 Address within the range of trusted ip will not do URL filter."
+            ::= { arrisWrmDevUrl 6 }
+
+
+        arrisWrmDevUrlTrustLowIp OBJECT-TYPE
+            SYNTAX IpAddress
+            MAX-ACCESS read-write
+            STATUS current
+            DESCRIPTION
+                "Set the start address of trusted IP."
+            ::= { arrisWrmDevUrl 7 }
+
+
+        arrisWrmDevUrlTrustHighIp OBJECT-TYPE
+            SYNTAX IpAddress
+            MAX-ACCESS read-write
+            STATUS current
+            DESCRIPTION
+                "Set the end address of trusted IP."
+            ::= { arrisWrmDevUrl 8 }
+
+
+--
+-- The following group describes the MIB objects which control Virtual Servers
+--
+arrisWrmDevVsDelete OBJECT-TYPE
+     SYNTAX OCTET STRING
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION "Virtual Server Delete"
+     ::= { arrisWrmDevVs 1 }
+
+arrisWrmDevVsTable OBJECT-TYPE
+     SYNTAX SEQUENCE OF ArrisWrmDevVsEntry
+     MAX-ACCESS not-accessible
+     STATUS current
+     DESCRIPTION "Table of Virtual Servers"
+     ::= { arrisWrmDevVs 2 }
+arrisWrmDevVsEntry OBJECT-TYPE
+     SYNTAX      ArrisWrmDevVsEntry
+     MAX-ACCESS  not-accessible
+     STATUS      current
+     DESCRIPTION "Table of Virtual Servers"
+     INDEX { arrisWrmDevVsIndex }
+     ::= {  arrisWrmDevVsTable 1 }
+ArrisWrmDevVsEntry ::= SEQUENCE {
+         arrisWrmDevVsIndex        Integer32,
+         arrisWrmDevVsEnableStatus INTEGER,
+         arrisWrmDevVsServiceName  OCTET STRING,
+         arrisWrmDevVsPcAddress    IpAddress,
+         arrisWrmDevVsType         INTEGER,
+         arrisWrmDevVsInPort       Integer32,
+         arrisWrmDevVsOutPort      Integer32,
+         arrisWrmDevVsPortRange    Integer32
+     }
+arrisWrmDevVsIndex OBJECT-TYPE
+     SYNTAX  Integer32
+     MAX-ACCESS read-only
+     STATUS current
+     DESCRIPTION "Index"
+     ::= { arrisWrmDevVsEntry 1 }
+
+arrisWrmDevVsEnableStatus OBJECT-TYPE
+     SYNTAX  INTEGER{
+          enable(1),
+          disable(2)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION "enable/disable status"
+     ::= { arrisWrmDevVsEntry 2 }
+
+arrisWrmDevVsServiceName OBJECT-TYPE
+     SYNTAX  OCTET STRING
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION "Virtual Server name"
+     ::= { arrisWrmDevVsEntry 3 }
+arrisWrmDevVsPcAddress OBJECT-TYPE
+     SYNTAX  IpAddress
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION "IP address of device using this entry."
+     ::= { arrisWrmDevVsEntry 4 }
+arrisWrmDevVsType OBJECT-TYPE
+     SYNTAX  INTEGER {
+          udp(0),
+          tcp(1)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION "udp/tcp"
+     ::= { arrisWrmDevVsEntry 5 }
+arrisWrmDevVsInPort OBJECT-TYPE
+     SYNTAX  Integer32 (0..65535)
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION "inbound port"
+     ::= { arrisWrmDevVsEntry 6 }
+arrisWrmDevVsOutPort OBJECT-TYPE
+     SYNTAX  Integer32 (0..65535)
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION "Outbound port"
+     ::= { arrisWrmDevVsEntry 7 }
+arrisWrmDevVsPortRange OBJECT-TYPE
+     SYNTAX  Integer32 (0..65535)
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+         "Port Range.  Use 1 if only forwarding specified port.
+          To set up an entry with ports 2300-2400, use port 2300 and a range of 101"
+     ::= { arrisWrmDevVsEntry 8 }
+
+--
+-- The following group describes the MIB objects which controls  WRMP debug and shows STATUS
+--
+arrisWrmDevWrmpEnable OBJECT-TYPE
+     SYNTAX  INTEGER {
+        enable(1),
+        disable(2)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION "Enable WRMP"
+     ::= { arrisWrmDevWrmp 1 }
+
+arrisWrmDevWrmpChksum OBJECT-TYPE
+     SYNTAX  INTEGER {
+        enable(1),
+        disable(2)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION "Calculate WRMP checksum"
+     ::= { arrisWrmDevWrmp 2 }
+
+arrisWrmDevWrmpAssert OBJECT-TYPE
+     SYNTAX  INTEGER {
+        enable(1),
+        disable(2)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION "enable/disable WRMP Assert"
+     ::= { arrisWrmDevWrmp 3 }
+
+arrisWrmDevWrmpPktToLan OBJECT-TYPE
+     SYNTAX  INTEGER {
+        enable(1),
+        disable(2)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION "Dump packets to LAN"
+     ::= { arrisWrmDevWrmp 4 }
+
+arrisWrmDevWrmpPktDetail OBJECT-TYPE
+     SYNTAX  INTEGER {
+        enable(1),
+        disable(2)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION "Detail Information"
+     ::= { arrisWrmDevWrmp 5 }
+
+arrisWrmDevWrmpSpecMacAddr OBJECT-TYPE
+     SYNTAX  OCTET STRING
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION "Dump packets to specific MAC Address"
+     ::= { arrisWrmDevWrmp 6 }
+
+arrisWrmDevWrmpSendPkts   OBJECT-TYPE
+     SYNTAX  Integer32
+     MAX-ACCESS read-only
+     STATUS current
+     DESCRIPTION "How many wrmp packets have been sent"
+     ::= { arrisWrmDevWrmp 7 }
+
+arrisWrmDevWrmpRecvPkts   OBJECT-TYPE
+     SYNTAX  Integer32
+     MAX-ACCESS read-only
+     STATUS current
+     DESCRIPTION "How many wrmp packets have been received"
+     ::= { arrisWrmDevWrmp 8 }
+
+arrisWrmDevWrmpMalformPkts   OBJECT-TYPE
+     SYNTAX  Integer32
+     MAX-ACCESS read-only
+     STATUS current
+     DESCRIPTION "How many malformed WRMP packets received"
+     ::= { arrisWrmDevWrmp 9 }
+
+arrisWrmDevWrmpCmMacAddr   OBJECT-TYPE
+     SYNTAX  OCTET STRING
+     MAX-ACCESS read-only
+     STATUS current
+     DESCRIPTION "CM Mac address"
+     ::= { arrisWrmDevWrmp 10 }
+
+arrisWrmDevWrmpCmLinkState   OBJECT-TYPE
+     SYNTAX  INTEGER{
+        up(1),
+        down(2)
+     }
+     MAX-ACCESS read-only
+     STATUS current
+     DESCRIPTION "CM Link State"
+     ::= { arrisWrmDevWrmp 11 }
+
+--
+-- The following group describes the MIB objects which show the System Information
+--
+arrisWrmDevFW OBJECT-TYPE
+     SYNTAX  OCTET STRING
+     MAX-ACCESS read-only
+     STATUS current
+     DESCRIPTION "Shows WRM Firmware version."
+     ::= { arrisWrmDevSystem 1 }
+
+arrisWrmDevBootVer OBJECT-TYPE
+     SYNTAX  OCTET STRING
+     MAX-ACCESS read-only
+     STATUS current
+     DESCRIPTION "Shows WRM BOOT version."
+     ::= { arrisWrmDevSystem 2 }
+
+arrisWrmDevHWName OBJECT-TYPE
+     SYNTAX  OCTET STRING
+     MAX-ACCESS read-only
+     STATUS current
+     DESCRIPTION "Shows WRM Hardware Name."
+     ::= { arrisWrmDevSystem 3 }
+
+arrisWrmDevTime OBJECT-TYPE
+     SYNTAX  TimeTicks
+     MAX-ACCESS read-only
+     STATUS current
+     DESCRIPTION "Shows the uptime of the WRM since the last reboot."
+     ::= { arrisWrmDevSystem 4 }
+
+arrisWrmDevLanMac OBJECT-TYPE
+     SYNTAX  OCTET STRING
+     MAX-ACCESS read-only
+     STATUS current
+     DESCRIPTION "Shows WRM Hardware Name."
+     ::= { arrisWrmDevSystem 5 }
+
+arrisWrmDevWanMac OBJECT-TYPE
+     SYNTAX  OCTET STRING
+     MAX-ACCESS read-only
+     STATUS current
+     DESCRIPTION "Shows WRM Hardware Name."
+     ::= { arrisWrmDevSystem 6 }
+
+arrisWrmDevFactoryReset OBJECT-TYPE
+     SYNTAX INTEGER {
+         true(1),
+         false(2)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+         "If set to True(1), the WRM will revert setttings to factory default and then
+          auto-reboot. When read, False(2) will always be returned."
+     ::= { arrisWrmDevSystem 7 }
+
+arrisWrmDevRefresh OBJECT-TYPE
+     SYNTAX INTEGER {
+         true(1),
+         false(2)
+     }
+     MAX-ACCESS read-write
+     STATUS current
+     DESCRIPTION
+         "If set to True(1), the WRM will copy GUI RAM value to CLI RAM value.
+          When read, False(2) will always be returned.(similar to sdc refresh).
+          And it will be in effect right now."
+     ::= { arrisWrmDevSystem 8 }
+
+END

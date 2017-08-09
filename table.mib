@@ -1,0 +1,136 @@
+-- $Header: /usr/cvsroot/target/src/wrn/wm/demo/unxagent/sun/table.mib,v 1.1.1.1 2001/11/05 17:49:17 tneale Exp $
+
+--______________________________________________________________________
+--
+--  *** Restricted Rights Legend ***
+--
+--  The programs and information contained herein are licensed only
+--  pursuant to a license agreement that contains use, reverse
+--  engineering, disclosure, and other restrictions; accordingly, it
+--  is "Unpublished - all rights reserved under the applicable
+--  copyright laws".
+--
+--  Use duplication, or disclosure by the Government is subject to
+--  restrictions as set forth in subparagraph (c)(1)(ii) of the Rights
+--  in Technical Data and Computer Licensed Programs clause of DFARS
+--  52.227 7013.
+--
+--  Copyright 2000-2001 Wind River Systems, Inc.
+--  Copyright 1994-1997 Epilogue Technology Corporation.
+--  Copyright 1998 Integrated Systems, Inc.
+--  All rights reserved.
+--
+--  *** Government Use ***
+--
+--  The Licensed Programs and their documentation were developed at
+--  private expense and no part of them is in the public domain.
+--
+--  The Licensed Programs are "Restricted Computer Software" as that
+--  term is defined in Clause 52.227-19 of the Federal Acquisition
+--  Regulations (FAR) and are "Commercial Computer Software" as that
+--  term is defined in Subpart 227.401 of the Department of Defense
+--  Federal Acquisition Regulation Supplement (DFARS).
+--
+--  (i) If the licensed Programs are supplied to the Department of
+--      Defense (DoD), the Licensed Programs are classified as
+--      "Commercial Computer Software" and the Government is acquiring
+--      only "restricted rights" in the Licensed Programs and their
+--      documentation as that term is defined in Clause 52.227
+--      7013(c)(1) of the DFARS, and
+--
+--  (ii) If the Licensed Programs are supplied to any unit or agency
+--      of the United States Government other than DoD, the
+--      Government's rights in the Licensed Programs and their
+--      documentation will be as defined in Clause 52.227-19(c)(2) of
+--      the FAR.
+--______________________________________________________________________
+
+ SUBAGENT-MIB
+
+	FORCE-INCLUDE <stdio.h>
+	FORCE-INCLUDE <sys/types.h>
+	FORCE-INCLUDE <envoy/h/asn1.h>
+	FORCE-INCLUDE <envoy/h/mib.h>
+	FORCE-INCLUDE <envoy/h/snmpdefs.h>
+	FORCE-INCLUDE <envoy/h/snmp.h>
+	FORCE-INCLUDE <envoy/h/auxfuncs.h>
+
+	FORCE-INCLUDE "tablehnd.h"
+
+	DEFAULT get-function-async get_%t
+	DEFAULT set-function-async null_set_proc
+	DEFAULT test-function-async sa_table_test
+	DEFAULT next-function-async sa_table_next
+	DEFAULT cookie (char *)NULL
+
+ DEFINITIONS ::= BEGIN
+
+	IMPORTS enterprises
+		    FROM RFC1155-SMI
+		OBJECT-TYPE
+		    FROM RFC-1212;
+--		DisplayString
+--		    FROM RFC-1213;
+DisplayString ::= OCTET STRING
+
+epilogue	OBJECT IDENTIFIER ::= { enterprises 12 }
+subagent	OBJECT IDENTIFIER ::= { epilogue 8 }
+
+-- subagent MIB
+
+satable			OBJECT-TYPE
+	SYNTAX  SEQUENCE OF SAEntry
+	ACCESS  not-accessible
+	STATUS  mandatory
+	DESCRIPTION
+		""
+	DEFAULT test-function-async sa_table_test
+	DEFAULT next-function-async sa_table_next
+	DEFAULT get-function-async sa_table_get
+	DEFAULT set-function-async sa_table_set
+	::= {subagent 1}
+
+saEntry			OBJECT-TYPE
+	SYNTAX	SAEntry
+	ACCESS	not-accessible
+	STATUS	mandatory
+	DESCRIPTION
+		""
+	INDEX	{ saIndex }
+	::= { satable 1 }
+
+SAEntry ::= 
+	SEQUENCE {
+		saIndex
+			INTEGER,
+		saDescr
+			DisplayString,
+		saType
+			INTEGER
+		}
+
+saIndex			OBJECT-TYPE
+	SYNTAX	INTEGER
+	ACCESS	read-only
+	STATUS	mandatory
+	DESCRIPTION
+		""
+	::= { saEntry 1 }
+	
+saDescr			OBJECT-TYPE
+	SYNTAX	DisplayString
+	ACCESS	read-only
+	STATUS	mandatory
+	DESCRIPTION
+		"A test string for the subagent stuff"
+	::= { saEntry 2 }
+
+saType			OBJECT-TYPE
+	SYNTAX	INTEGER
+	ACCESS	read-write
+	STATUS	mandatory
+	DESCRIPTION
+		"test integer"
+	::=	{ saEntry 3 }
+
+	END
